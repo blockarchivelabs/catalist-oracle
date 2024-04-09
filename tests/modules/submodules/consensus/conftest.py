@@ -9,7 +9,7 @@ class SimpleConsensusModule(ConsensusModule):
     CONTRACT_VERSION = 1
 
     def __init__(self, w3):
-        self.report_contract = w3.lido_contracts.accounting_oracle
+        self.report_contract = w3.catalist_contracts.accounting_oracle
         super().__init__(w3)
 
     def build_report(self, blockstamp: ReferenceBlockStamp) -> tuple:

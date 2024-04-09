@@ -4,10 +4,10 @@ from more_itertools import ilen
 
 from src.constants import TOTAL_BASIS_POINTS
 from src.modules.submodules.typings import ChainConfig
-from src.services.validator_state import LidoValidatorStateService
+from src.services.validator_state import CatalistValidatorStateService
 from src.typings import ReferenceBlockStamp
 from src.utils.validator_state import is_on_exit, get_validator_age
-from src.web3py.extensions.lido_validators import NodeOperatorGlobalIndex, LidoValidator
+from src.web3py.extensions.catalist_validators import NodeOperatorGlobalIndex, CatalistValidator
 from src.web3py.typings import Web3
 
 
@@ -20,32 +20,32 @@ class NodeOperatorPredictableState:
     delayed_validators_count: int
 
 
-class ExitOrderIteratorStateService(LidoValidatorStateService):
-    """Service prepares lido operator statistic, which used to form validators queue in right order"""
+class ExitOrderIteratorStateService(CatalistValidatorStateService):
+    """Service prepares catalist operator statistic, which used to form validators queue in right order"""
 
     def __init__(self, web3: Web3, blockstamp: ReferenceBlockStamp):
         super().__init__(web3)
 
-        self._operators = self.w3.lido_validators.get_lido_node_operators(blockstamp)
-        self._operator_validators = self.w3.lido_validators.get_lido_validators_by_node_operators(blockstamp)
+        self._operators = self.w3.catalist_validators.get_catalist_node_operators(blockstamp)
+        self._operator_validators = self.w3.catalist_validators.get_catalist_validators_by_node_operators(blockstamp)
         self._operator_last_requested_to_exit_indexes = self.get_operators_with_last_exited_validator_indexes(
             blockstamp
         )
 
-    def get_exitable_lido_validators(self) -> list[LidoValidator]:
+    def get_exitable_catalist_validators(self) -> list[CatalistValidator]:
         """Get validators that are available to exit"""
 
-        exitable_lido_validators = []
+        exitable_catalist_validators = []
 
         for global_index, validators in self._operator_validators.items():
             last_requested_to_exit_index = self._operator_last_requested_to_exit_indexes[global_index]
             for validator in validators:
                 if self.is_exitable(validator, last_requested_to_exit_index):
-                    exitable_lido_validators.append(validator)
+                    exitable_catalist_validators.append(validator)
 
-        return exitable_lido_validators
+        return exitable_catalist_validators
 
-    def prepare_lido_node_operator_stats(
+    def prepare_catalist_node_operator_stats(
         self, blockstamp: ReferenceBlockStamp, chain_config: ChainConfig
     ) -> dict[NodeOperatorGlobalIndex, NodeOperatorPredictableState]:
         """Prepare node operators stats for sorting their validators in exit order"""
@@ -90,25 +90,25 @@ class ExitOrderIteratorStateService(LidoValidatorStateService):
     def get_total_predictable_validators_count(
         self,
         blockstamp: ReferenceBlockStamp,
-        lido_node_operator_stats: dict[NodeOperatorGlobalIndex, NodeOperatorPredictableState]
+        catalist_node_operator_stats: dict[NodeOperatorGlobalIndex, NodeOperatorPredictableState]
     ) -> int:
         """Get total predictable validators count for stake weight calculation"""
-        lido_validators = {
-            v.validator.pubkey: v for v in self.w3.lido_validators.get_lido_validators(blockstamp)
+        catalist_validators = {
+            v.validator.pubkey: v for v in self.w3.catalist_validators.get_catalist_validators(blockstamp)
         }
-        not_lido_predictable_validators_count = ilen(
+        not_catalist_predictable_validators_count = ilen(
             v for v in self.w3.cc.get_validators(blockstamp)
-            if v.validator.pubkey not in lido_validators and not is_on_exit(v)
+            if v.validator.pubkey not in catalist_validators and not is_on_exit(v)
         )
-        lido_predictable_validators_count = sum(
-            o.predictable_validators_count for o in lido_node_operator_stats.values()
+        catalist_predictable_validators_count = sum(
+            o.predictable_validators_count for o in catalist_node_operator_stats.values()
         )
         return (
-            not_lido_predictable_validators_count + lido_predictable_validators_count
+            not_catalist_predictable_validators_count + catalist_predictable_validators_count
         )
 
     def get_operator_network_penetration_threshold(self, blockstamp: ReferenceBlockStamp) -> float:
-        exiting_keys_delayed_border_in_slots_bytes = self.w3.lido_contracts.oracle_daemon_config.functions.get(
+        exiting_keys_delayed_border_in_slots_bytes = self.w3.catalist_contracts.oracle_daemon_config.functions.get(
             'NODE_OPERATOR_NETWORK_PENETRATION_THRESHOLD_BP'
         ).call(block_identifier=blockstamp.block_hash)
 
@@ -117,7 +117,7 @@ class ExitOrderIteratorStateService(LidoValidatorStateService):
     @staticmethod
     def count_operator_validators_stats(
         blockstamp: ReferenceBlockStamp,
-        operator_validators: list[LidoValidator],
+        operator_validators: list[CatalistValidator],
         last_requested_to_exit_index: int,
     ) -> tuple[int, int]:
         """Get operator validators stats for sorting their validators in exit queue"""
@@ -133,7 +133,7 @@ class ExitOrderIteratorStateService(LidoValidatorStateService):
 
     @staticmethod
     def count_operator_delayed_validators(
-        operator_validators: list[LidoValidator],
+        operator_validators: list[CatalistValidator],
         recently_operator_requested_to_exit_index: set[int],
         last_requested_to_exit_index: int,
     ) -> int:
@@ -151,7 +151,7 @@ class ExitOrderIteratorStateService(LidoValidatorStateService):
         return delayed_validators_count
 
     @staticmethod
-    def is_exitable(validator: LidoValidator, last_requested_to_exit_index: int) -> bool:
+    def is_exitable(validator: CatalistValidator, last_requested_to_exit_index: int) -> bool:
         """Returns True if validator is exitable: not on exit and not requested to exit"""
         requested_to_exit = int(validator.index) <= last_requested_to_exit_index
         on_exit = is_on_exit(validator)

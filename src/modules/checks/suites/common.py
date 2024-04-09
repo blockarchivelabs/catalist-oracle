@@ -8,8 +8,8 @@ from src.modules.ejector.ejector import Ejector
 
 @pytest.fixture()
 def skip_locator(web3):
-    if not hasattr(web3, 'lido_contracts'):
-        pytest.skip('LIDO_LOCATOR_ADDRESS is not set')
+    if not hasattr(web3, 'catalist_contracts'):
+        pytest.skip('CATALIST_LOCATOR_ADDRESS is not set')
 
 
 @pytest.fixture()

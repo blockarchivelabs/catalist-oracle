@@ -12,7 +12,7 @@ from src.modules.submodules.exceptions import IsNotMemberException, Incompatible
 from src.providers.http_provider import NotOkResponse
 from src.providers.keys.client import KeysOutdatedException
 from src.utils.cache import clear_global_cache
-from src.web3py.extensions.lido_validators import CountOfKeysDiffersException
+from src.web3py.extensions.catalist_validators import CountOfKeysDiffersException
 from src.utils.blockstamp import build_blockstamp
 from src.utils.slot import NoSlotsAvailable, SlotNotFinalized, InconsistentData
 from src.web3py.typings import Web3
@@ -58,7 +58,7 @@ class BaseModule(ABC):
         blockstamp = self._receive_last_finalized_slot()
 
         if blockstamp.slot_number > self._slot_threshold:
-            if self.w3.lido_contracts.has_contract_address_changed():
+            if self.w3.catalist_contracts.has_contract_address_changed():
                 clear_global_cache()
                 self.refresh_contracts()
             result = self.run_cycle(blockstamp)

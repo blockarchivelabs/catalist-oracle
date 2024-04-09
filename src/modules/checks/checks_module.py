@@ -9,7 +9,7 @@ class ChecksModule:
         - Consensus Layer node
         - Execution Layer node
         - Keys API service
-    if LIDO_LOCATOR address provided
+    if CATALIST_LOCATOR address provided
         - Checks configs in Accounting module and Ejector module
     """
     def execute_module(self):

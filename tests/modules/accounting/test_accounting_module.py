@@ -9,16 +9,16 @@ from src import variables
 from src.modules.accounting import accounting as accounting_module
 from src.modules.accounting.accounting import Accounting
 from src.modules.accounting.accounting import logger as accounting_logger
-from src.modules.accounting.typings import LidoReportRebase
+from src.modules.accounting.typings import CatalistReportRebase
 from src.modules.submodules.oracle_module import ModuleExecuteDelay
 from src.modules.submodules.typings import ChainConfig, FrameConfig
 from src.services.withdrawal import Withdrawal
 from src.typings import BlockStamp, ReferenceBlockStamp
-from src.web3py.extensions.lido_validators import NodeOperatorId, StakingModule
+from src.web3py.extensions.catalist_validators import NodeOperatorId, StakingModule
 from tests.factory.blockstamp import BlockStampFactory, ReferenceBlockStampFactory
 from tests.factory.configs import ChainConfigFactory, FrameConfigFactory
-from tests.factory.contract_responses import LidoReportRebaseFactory
-from tests.factory.no_registry import LidoValidatorFactory, StakingModuleFactory
+from tests.factory.contract_responses import CatalistReportRebaseFactory
+from tests.factory.no_registry import CatalistValidatorFactory, StakingModuleFactory
 
 
 @pytest.fixture(autouse=True)
@@ -95,13 +95,13 @@ def test_get_updated_modules_stats(accounting: Accounting):
 
 
 @pytest.mark.unit
-@pytest.mark.usefixtures("lido_validators")
-def test_get_consensus_lido_state(accounting: Accounting):
+@pytest.mark.usefixtures("catalist_validators")
+def test_get_consensus_catalist_state(accounting: Accounting):
     bs = ReferenceBlockStampFactory.build()
-    validators = LidoValidatorFactory.batch(10)
-    accounting.w3.lido_validators.get_lido_validators = Mock(return_value=validators)
+    validators = CatalistValidatorFactory.batch(10)
+    accounting.w3.catalist_validators.get_catalist_validators = Mock(return_value=validators)
 
-    count, balance = accounting._get_consensus_lido_state(bs)
+    count, balance = accounting._get_consensus_catalist_state(bs)
 
     assert count == 10
     assert balance == sum((int(val.balance) for val in validators))
@@ -117,14 +117,14 @@ def test_get_consensus_lido_state(accounting: Accounting):
     ],
 )
 def test_get_finalization_data(accounting: Accounting, post_total_pooled_ether, post_total_shares, expected_share_rate):
-    lido_rebase = LidoReportRebaseFactory.build(
+    catalist_rebase = CatalistReportRebaseFactory.build(
         post_total_pooled_ether=post_total_pooled_ether,
         post_total_shares=post_total_shares,
     )
 
     accounting.get_chain_config = Mock(return_value=ChainConfigFactory.build())
     accounting.get_frame_config = Mock(return_value=FrameConfigFactory.build(initial_epoch=2, epochs_per_frame=1))
-    accounting.simulate_full_rebase = Mock(return_value=lido_rebase)
+    accounting.simulate_full_rebase = Mock(return_value=catalist_rebase)
     accounting._is_bunker = Mock(return_value=False)
 
     bs = ReferenceBlockStampFactory.build()
@@ -149,7 +149,7 @@ def test_get_slots_elapsed_from_initialize(accounting: Accounting):
     accounting.get_chain_config = Mock(return_value=ChainConfigFactory.build())
     accounting.get_frame_config = Mock(return_value=FrameConfigFactory.build(initial_epoch=2, epochs_per_frame=1))
 
-    accounting.w3.lido_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=None)
+    accounting.w3.catalist_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=None)
 
     bs = ReferenceBlockStampFactory.build(ref_slot=100)
     slots_elapsed = accounting._get_slots_elapsed_from_last_report(bs)
@@ -163,7 +163,7 @@ def test_get_slots_elapsed_from_last_report(accounting: Accounting):
     accounting.get_chain_config = Mock(return_value=ChainConfigFactory.build())
     accounting.get_frame_config = Mock(return_value=FrameConfigFactory.build(initial_epoch=2, epochs_per_frame=1))
 
-    accounting.w3.lido_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=70)
+    accounting.w3.catalist_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=70)
 
     bs = ReferenceBlockStampFactory.build(ref_slot=100)
     slots_elapsed = accounting._get_slots_elapsed_from_last_report(bs)
@@ -246,14 +246,14 @@ class TestAccountingSubmitExtraData:
         extra_data = bytes(32)
 
         accounting.get_chain_config = Mock(return_value=chain_config)
-        accounting.lido_validator_state_service.get_extra_data = Mock(return_value=Mock(extra_data=extra_data))
+        accounting.catalist_validator_state_service.get_extra_data = Mock(return_value=Mock(extra_data=extra_data))
         accounting.report_contract.functions.submitReportExtraDataList = Mock()  # type: ignore
         accounting.w3.transaction = Mock()
 
         accounting._submit_extra_data(ref_bs)
 
         accounting.report_contract.functions.submitReportExtraDataList.assert_called_once_with(extra_data)
-        accounting.lido_validator_state_service.get_extra_data.assert_called_once_with(ref_bs, chain_config)
+        accounting.catalist_validator_state_service.get_extra_data.assert_called_once_with(ref_bs, chain_config)
         accounting.get_chain_config.assert_called_once_with(ref_bs)
 
     @pytest.mark.unit
@@ -276,7 +276,7 @@ class TestAccountingSubmitExtraData:
         extra_data: Any,
     ):
         accounting.get_chain_config = Mock(return_value=chain_config)
-        accounting.lido_validator_state_service.get_extra_data = Mock(return_value=Mock(extra_data=extra_data))
+        accounting.catalist_validator_state_service.get_extra_data = Mock(return_value=Mock(extra_data=extra_data))
         accounting.report_contract.functions.submitReportExtraDataList = Mock()  # type: ignore
         accounting.report_contract.functions.submitReportExtraDataEmpty = Mock()  # type: ignore
         accounting.w3.transaction = Mock()
@@ -285,7 +285,7 @@ class TestAccountingSubmitExtraData:
 
         accounting.report_contract.functions.submitReportExtraDataEmpty.assert_called_once()
         accounting.report_contract.functions.submitReportExtraDataList.assert_not_called()
-        accounting.lido_validator_state_service.get_extra_data.assert_called_once_with(ref_bs, chain_config)
+        accounting.catalist_validator_state_service.get_extra_data.assert_called_once_with(ref_bs, chain_config)
         accounting.get_chain_config.assert_called_once_with(ref_bs)
 
 
@@ -386,7 +386,7 @@ def test_get_shares_to_burn(
     bs: BlockStamp,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    call_mock = accounting.w3.lido_contracts.burner.functions.getSharesRequestedToBurn = Mock()  # type: ignore
+    call_mock = accounting.w3.catalist_contracts.burner.functions.getSharesRequestedToBurn = Mock()  # type: ignore
 
     with monkeypatch.context() as m:
         shares_data = Mock(cover_shares=42, non_cover_shares=17)
@@ -420,7 +420,7 @@ def test_simulate_cl_rebase(accounting: Accounting, ref_bs: ReferenceBlockStamp)
 def test_simulate_full_rebase(accounting: Accounting, ref_bs: ReferenceBlockStamp):
     RESULT = object()
     accounting.simulate_rebase_after_report = Mock(return_value=RESULT)
-    accounting.w3.lido_contracts.get_el_vault_balance = Mock(return_value=42)
+    accounting.w3.catalist_contracts.get_el_vault_balance = Mock(return_value=42)
 
     out = accounting.simulate_full_rebase(ref_bs)
 
@@ -437,30 +437,30 @@ def test_simulate_rebase_after_report(
     # NOTE: we don't test the actual rebase calculation here, just the logic of the method
 
     accounting.get_chain_config = Mock(return_value=chain_config)
-    accounting.w3.lido_contracts.get_withdrawal_balance = Mock(return_value=17)
+    accounting.w3.catalist_contracts.get_withdrawal_balance = Mock(return_value=17)
     accounting.get_shares_to_burn = Mock(return_value=13)
 
-    accounting._get_consensus_lido_state = Mock(return_value=(0, 0))
+    accounting._get_consensus_catalist_state = Mock(return_value=(0, 0))
     accounting._get_slots_elapsed_from_last_report = Mock(return_value=42)
 
     simulation_tx = Mock(
         call=Mock(
             return_value=asdict(
-                LidoReportRebaseFactory.build(),
+                CatalistReportRebaseFactory.build(),
             ).values(),
         )
     )
-    accounting.w3.lido_contracts.lido.functions.handleOracleReport = Mock(return_value=simulation_tx)  # type: ignore
+    accounting.w3.catalist_contracts.catalist.functions.handleOracleReport = Mock(return_value=simulation_tx)  # type: ignore
 
     out = accounting.simulate_rebase_after_report(ref_bs, Wei(0))
-    assert isinstance(out, LidoReportRebase), "simulate_rebase_after_report returned unexpected value"
+    assert isinstance(out, CatalistReportRebase), "simulate_rebase_after_report returned unexpected value"
 
 
 @pytest.mark.unit
-@pytest.mark.usefixtures('lido_validators')
+@pytest.mark.usefixtures('catalist_validators')
 def test_get_newly_exited_validators_by_modules(accounting: Accounting, ref_bs: ReferenceBlockStamp):
-    accounting.w3.lido_validators.get_staking_modules = Mock(return_value=[Mock(), Mock()])
-    accounting.lido_validator_state_service.get_exited_lido_validators = Mock(return_value=[])
+    accounting.w3.catalist_validators.get_staking_modules = Mock(return_value=[Mock(), Mock()])
+    accounting.catalist_validator_state_service.get_exited_catalist_validators = Mock(return_value=[])
 
     RESULT = object()
     accounting.get_updated_modules_stats = Mock(return_value=RESULT)
@@ -468,8 +468,8 @@ def test_get_newly_exited_validators_by_modules(accounting: Accounting, ref_bs: 
     out = accounting._get_newly_exited_validators_by_modules(ref_bs)
 
     assert out is RESULT
-    accounting.w3.lido_validators.get_staking_modules.assert_called_once_with(ref_bs)
-    accounting.lido_validator_state_service.get_exited_lido_validators.assert_called_once_with(ref_bs)
+    accounting.w3.catalist_validators.get_staking_modules.assert_called_once_with(ref_bs)
+    accounting.catalist_validator_state_service.get_exited_catalist_validators.assert_called_once_with(ref_bs)
 
 
 @pytest.mark.unit

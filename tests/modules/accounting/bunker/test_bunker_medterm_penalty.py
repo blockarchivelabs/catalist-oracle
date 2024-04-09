@@ -44,7 +44,7 @@ def simple_validators(
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    ("blockstamp", "all_validators", "lido_validators", "report_cl_rebase", "expected_result"),
+    ("blockstamp", "all_validators", "catalist_validators", "report_cl_rebase", "expected_result"),
     [
         (
             # no one slashed
@@ -55,7 +55,7 @@ def simple_validators(
             False,
         ),
         (
-            # no one Lido slashed
+            # no one Catalist slashed
             simple_blockstamp(0),
             [*simple_validators(0, 49), *simple_validators(50, 99, slashed=True)],
             simple_validators(0, 9),
@@ -63,7 +63,7 @@ def simple_validators(
             False,
         ),
         (
-            # Lido slashed, but midterm penalty is not in the future
+            # Catalist slashed, but midterm penalty is not in the future
             simple_blockstamp(1500000),
             [
                 *simple_validators(0, 49),
@@ -108,7 +108,7 @@ def simple_validators(
     ],
 )
 def test_is_high_midterm_slashing_penalty(
-    blockstamp, all_validators, lido_validators, report_cl_rebase, expected_result
+    blockstamp, all_validators, catalist_validators, report_cl_rebase, expected_result
 ):
     chain_config = ChainConfig(
         slots_per_epoch=32,
@@ -122,7 +122,7 @@ def test_is_high_midterm_slashing_penalty(
     )
 
     result = MidtermSlashingPenalty.is_high_midterm_slashing_penalty(
-        blockstamp, frame_config, chain_config, all_validators, lido_validators, report_cl_rebase, 0
+        blockstamp, frame_config, chain_config, all_validators, catalist_validators, report_cl_rebase, 0
     )
     assert result == expected_result
 
@@ -161,7 +161,7 @@ def test_get_possible_slashed_epochs(validator, ref_epoch, expected_result):
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    ("ref_epoch", "future_midterm_penalty_lido_slashed_validators", "expected_result"),
+    ("ref_epoch", "future_midterm_penalty_catalist_slashed_validators", "expected_result"),
     [
         (225, {}, {}),
         (
@@ -190,8 +190,8 @@ def test_get_possible_slashed_epochs(validator, ref_epoch, expected_result):
         ),
     ],
 )
-def test_get_per_frame_lido_validators_with_future_midterm_epoch(
-    ref_epoch, future_midterm_penalty_lido_slashed_validators, expected_result
+def test_get_per_frame_catalist_validators_with_future_midterm_epoch(
+    ref_epoch, future_midterm_penalty_catalist_slashed_validators, expected_result
 ):
     frame_config = FrameConfig(
         initial_epoch=EpochNumber(0),
@@ -199,10 +199,10 @@ def test_get_per_frame_lido_validators_with_future_midterm_epoch(
         fast_lane_length_slots=0,
     )
 
-    result = MidtermSlashingPenalty.get_lido_validators_with_future_midterm_epoch(
+    result = MidtermSlashingPenalty.get_catalist_validators_with_future_midterm_epoch(
         EpochNumber(ref_epoch),
         frame_config,
-        future_midterm_penalty_lido_slashed_validators,
+        future_midterm_penalty_catalist_slashed_validators,
     )
 
     assert result == expected_result
@@ -385,7 +385,7 @@ def test_get_bound_with_midterm_epoch_slashed_validators(
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    ("lido_validators", "ref_epoch", "expected_len"),
+    ("catalist_validators", "ref_epoch", "expected_len"),
     [
         (
             # no one slashed
@@ -407,8 +407,8 @@ def test_get_bound_with_midterm_epoch_slashed_validators(
         ),
     ],
 )
-def test_get_slashed_validators_with_impact_to_midterm_penalties(lido_validators, ref_epoch, expected_len):
-    result = MidtermSlashingPenalty.get_slashed_validators_with_impact_on_midterm_penalties(lido_validators, ref_epoch)
+def test_get_slashed_validators_with_impact_to_midterm_penalties(catalist_validators, ref_epoch, expected_len):
+    result = MidtermSlashingPenalty.get_slashed_validators_with_impact_on_midterm_penalties(catalist_validators, ref_epoch)
     assert len(result) == expected_len
 
 

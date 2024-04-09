@@ -16,9 +16,9 @@ from src.utils.cache import global_lru_cache as lru_cache
 logger = logging.getLogger()
 
 
-class LidoContracts(Module):
-    lido_locator: Contract
-    lido: Contract
+class CatalistContracts(Module):
+    catalist_locator: Contract
+    catalist: Contract
     accounting_oracle: Contract
     staking_router: Contract
     validators_exit_bus_oracle: Contract
@@ -52,7 +52,7 @@ class LidoContracts(Module):
         except BadFunctionCallOutput:
             logger.info({
                 'msg': 'getContractVersion method from accounting_oracle and validators_exit_bus_oracle '
-                       'doesn\'t return any data. Probably addresses from Lido Locator refer to the wrong '
+                       'doesn\'t return any data. Probably addresses from Catalist Locator refer to the wrong '
                        'implementation or contracts don\'t exist. Sleep for 1 minute.'
             })
             sleep(60)
@@ -61,57 +61,57 @@ class LidoContracts(Module):
             return
 
     def _load_contracts(self):
-        # Contract that stores all lido contract addresses
-        self.lido_locator = self.w3.eth.contract(
-            address=variables.LIDO_LOCATOR_ADDRESS,
-            abi=self.load_abi('LidoLocator'),
+        # Contract that stores all catalist contract addresses
+        self.catalist_locator = self.w3.eth.contract(
+            address=variables.CATALIST_LOCATOR_ADDRESS,
+            abi=self.load_abi('CatalistLocator'),
             decode_tuples=True,
         )
 
-        self.lido = self.w3.eth.contract(
-            address=self.lido_locator.functions.lido().call(),
-            abi=self.load_abi('Lido'),
+        self.catalist = self.w3.eth.contract(
+            address=self.catalist_locator.functions.catalist().call(),
+            abi=self.load_abi('Catalist'),
             decode_tuples=True,
         )
 
         self.accounting_oracle = self.w3.eth.contract(
-            address=self.lido_locator.functions.accountingOracle().call(),
+            address=self.catalist_locator.functions.accountingOracle().call(),
             abi=self.load_abi('AccountingOracle'),
             decode_tuples=True,
         )
 
         self.staking_router = self.w3.eth.contract(
-            address=self.lido_locator.functions.stakingRouter().call(),
+            address=self.catalist_locator.functions.stakingRouter().call(),
             abi=self.load_abi('StakingRouter'),
             decode_tuples=True,
         )
 
         self.validators_exit_bus_oracle = self.w3.eth.contract(
-            address=self.lido_locator.functions.validatorsExitBusOracle().call(),
+            address=self.catalist_locator.functions.validatorsExitBusOracle().call(),
             abi=self.load_abi('ValidatorsExitBusOracle'),
             decode_tuples=True,
         )
 
         self.withdrawal_queue_nft = self.w3.eth.contract(
-            address=self.lido_locator.functions.withdrawalQueue().call(),
+            address=self.catalist_locator.functions.withdrawalQueue().call(),
             abi=self.load_abi('WithdrawalQueueERC721'),
             decode_tuples=True,
         )
 
         self.oracle_report_sanity_checker = self.w3.eth.contract(
-            address=self.lido_locator.functions.oracleReportSanityChecker().call(),
+            address=self.catalist_locator.functions.oracleReportSanityChecker().call(),
             abi=self.load_abi('OracleReportSanityChecker'),
             decode_tuples=True,
         )
 
         self.oracle_daemon_config = self.w3.eth.contract(
-            address=self.lido_locator.functions.oracleDaemonConfig().call(),
+            address=self.catalist_locator.functions.oracleDaemonConfig().call(),
             abi=self.load_abi('OracleDaemonConfig'),
             decode_tuples=True,
         )
 
         self.burner = self.w3.eth.contract(
-            address=self.lido_locator.functions.burner().call(),
+            address=self.catalist_locator.functions.burner().call(),
             abi=self.load_abi('Burner'),
             decode_tuples=True,
         )
@@ -130,7 +130,7 @@ class LidoContracts(Module):
 
     def get_withdrawal_balance_no_cache(self, blockstamp: BlockStamp) -> Wei:
         return Wei(self.w3.eth.get_balance(
-            self.lido_locator.functions.withdrawalVault().call(
+            self.catalist_locator.functions.withdrawalVault().call(
                 block_identifier=blockstamp.block_hash
             ),
             block_identifier=blockstamp.block_hash,
@@ -139,7 +139,7 @@ class LidoContracts(Module):
     @lru_cache(maxsize=1)
     def get_el_vault_balance(self, blockstamp: BlockStamp) -> Wei:
         return Wei(self.w3.eth.get_balance(
-            self.lido_locator.functions.elRewardsVault().call(
+            self.catalist_locator.functions.elRewardsVault().call(
                 block_identifier=blockstamp.block_hash
             ),
             block_identifier=blockstamp.block_hash,

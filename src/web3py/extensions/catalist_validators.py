@@ -6,7 +6,7 @@ from eth_typing import ChecksumAddress
 from web3.module import Module
 
 from src.providers.consensus.typings import Validator
-from src.providers.keys.typings import LidoKey
+from src.providers.keys.typings import CatalistKey
 from src.typings import BlockStamp
 from src.utils.dataclass import Nested, list_of_dataclasses
 from src.utils.cache import global_lru_cache as lru_cache
@@ -92,58 +92,58 @@ class NodeOperator(Nested):
 
 
 @dataclass
-class LidoValidator(Validator):
-    lido_id: LidoKey
+class CatalistValidator(Validator):
+    catalist_id: CatalistKey
 
 
 class CountOfKeysDiffersException(Exception):
     pass
 
 
-ValidatorsByNodeOperator = dict[NodeOperatorGlobalIndex, list[LidoValidator]]
+ValidatorsByNodeOperator = dict[NodeOperatorGlobalIndex, list[CatalistValidator]]
 
 
-class LidoValidatorsProvider(Module):
+class CatalistValidatorsProvider(Module):
     w3: 'Web3'
 
     @lru_cache(maxsize=1)
-    def get_lido_validators(self, blockstamp: BlockStamp) -> list[LidoValidator]:
-        lido_keys = self.w3.kac.get_used_lido_keys(blockstamp)
+    def get_catalist_validators(self, blockstamp: BlockStamp) -> list[CatalistValidator]:
+        catalist_keys = self.w3.kac.get_used_catalist_keys(blockstamp)
         validators = self.w3.cc.get_validators(blockstamp)
 
-        no_operators = self.get_lido_node_operators(blockstamp)
+        no_operators = self.get_catalist_node_operators(blockstamp)
 
         # Make sure that used keys fetched from Keys API >= total amount of total deposited validators from Staking Router
         total_deposited_validators = 0
         for node_operator in no_operators:
             total_deposited_validators += node_operator.total_deposited_validators
 
-        if len(lido_keys) < total_deposited_validators:
-            raise CountOfKeysDiffersException(f'Keys API Service returned lesser keys ({len(lido_keys)}) '
+        if len(catalist_keys) < total_deposited_validators:
+            raise CountOfKeysDiffersException(f'Keys API Service returned lesser keys ({len(catalist_keys)}) '
                                               f'than amount of deposited validators ({total_deposited_validators}) returned from Staking Router')
 
-        return self.merge_validators_with_keys(lido_keys, validators)
+        return self.merge_validators_with_keys(catalist_keys, validators)
 
     @staticmethod
-    def merge_validators_with_keys(keys: list[LidoKey], validators: list[Validator]) -> list[LidoValidator]:
-        """Merging and filter non-lido validators."""
+    def merge_validators_with_keys(keys: list[CatalistKey], validators: list[Validator]) -> list[CatalistValidator]:
+        """Merging and filter non-catalist validators."""
         validators_keys_dict = {validator.validator.pubkey: validator for validator in validators}
 
-        lido_validators = []
+        catalist_validators = []
 
         for key in keys:
             if key.key in validators_keys_dict:
-                lido_validators.append(LidoValidator(
-                    lido_id=key,
+                catalist_validators.append(CatalistValidator(
+                    catalist_id=key,
                     **asdict(validators_keys_dict[key.key]),
                 ))
 
-        return lido_validators
+        return catalist_validators
 
     @lru_cache(maxsize=1)
-    def get_lido_validators_by_node_operators(self, blockstamp: BlockStamp) -> ValidatorsByNodeOperator:
-        merged_validators = self.get_lido_validators(blockstamp)
-        no_operators = self.get_lido_node_operators(blockstamp)
+    def get_catalist_validators_by_node_operators(self, blockstamp: BlockStamp) -> ValidatorsByNodeOperator:
+        merged_validators = self.get_catalist_validators(blockstamp)
+        no_operators = self.get_catalist_node_operators(blockstamp)
 
         # Make sure even empty NO will be presented in dict
         no_validators: ValidatorsByNodeOperator = {
@@ -157,8 +157,8 @@ class LidoValidatorsProvider(Module):
 
         for validator in merged_validators:
             global_no_id = (
-                staking_module_address[validator.lido_id.moduleAddress],
-                NodeOperatorId(validator.lido_id.operatorIndex),
+                staking_module_address[validator.catalist_id.moduleAddress],
+                NodeOperatorId(validator.catalist_id.operatorIndex),
             )
 
             if global_no_id in no_validators:
@@ -172,11 +172,11 @@ class LidoValidatorsProvider(Module):
         return no_validators
 
     @lru_cache(maxsize=1)
-    def get_lido_node_operators(self, blockstamp: BlockStamp) -> list[NodeOperator]:
+    def get_catalist_node_operators(self, blockstamp: BlockStamp) -> list[NodeOperator]:
         result = []
 
         for module in self.get_staking_modules(blockstamp):
-            operators = self.w3.lido_contracts.staking_router.functions.getAllNodeOperatorDigests(
+            operators = self.w3.catalist_contracts.staking_router.functions.getAllNodeOperatorDigests(
                 module.id
             ).call(block_identifier=blockstamp.block_hash)
 
@@ -188,7 +188,7 @@ class LidoValidatorsProvider(Module):
     @lru_cache(maxsize=1)
     @list_of_dataclasses(StakingModule)
     def get_staking_modules(self, blockstamp: BlockStamp) -> list[StakingModule]:
-        modules = self.w3.lido_contracts.staking_router.functions.getStakingModules().call(
+        modules = self.w3.catalist_contracts.staking_router.functions.getStakingModules().call(
             block_identifier=blockstamp.block_hash,
         )
 

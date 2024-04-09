@@ -10,7 +10,7 @@ from src.modules.accounting.typings import OracleReportLimits
 from src.utils.web3converter import Web3Converter
 from src.utils.abi import named_tuple_to_dataclass
 from src.typings import EpochNumber, FrameNumber, ReferenceBlockStamp, SlotNumber
-from src.web3py.extensions.lido_validators import Validator
+from src.web3py.extensions.catalist_validators import Validator
 from src.web3py.typings import Web3
 from src.utils.slot import get_blockstamp
 
@@ -50,7 +50,7 @@ class SafeBorder(Web3Converter):
         super().__init__(chain_config, frame_config)
 
         self.w3 = w3
-        self.lido_contracts = w3.lido_contracts
+        self.catalist_contracts = w3.catalist_contracts
 
         self.blockstamp = blockstamp
         self.chain_config = chain_config
@@ -101,7 +101,7 @@ class SafeBorder(Web3Converter):
         if bunker_start_timestamp is not None:
             return self.get_epoch_by_timestamp(bunker_start_timestamp)
 
-        last_report_slot = self.w3.lido_contracts.get_accounting_last_processing_ref_slot(self.blockstamp)
+        last_report_slot = self.w3.catalist_contracts.get_accounting_last_processing_ref_slot(self.blockstamp)
         if last_report_slot != 0:
             return self.get_epoch_by_slot(last_report_slot)
 
@@ -114,7 +114,7 @@ class SafeBorder(Web3Converter):
         It is calculated as the earliest slashed_epoch among all incompleted slashings at
         the point of reference_epoch rounded to the start of the previous oracle report frame - default border.
 
-        See detailed research here: https://hackmd.io/@lido/r1Qkkiv3j
+        See detailed research here: https://hackmd.io/@catalist/r1Qkkiv3j
         """
         earliest_slashed_epoch = self._get_earliest_slashed_epoch_among_incomplete_slashings()
 
@@ -125,7 +125,7 @@ class SafeBorder(Web3Converter):
 
     @duration_meter()
     def _get_earliest_slashed_epoch_among_incomplete_slashings(self) -> Optional[EpochNumber]:
-        validators = self.w3.lido_validators.get_lido_validators(self.blockstamp)
+        validators = self.w3.catalist_validators.get_catalist_validators(self.blockstamp)
         validators_slashed = filter_slashed_validators(validators)
 
         # Here we filter not by exit_epoch but by withdrawable_epoch because exited operators can still be slashed.
@@ -216,9 +216,9 @@ class SafeBorder(Web3Converter):
         last_slot_in_frame = self.get_frame_last_slot(frame)
         last_slot_in_frame_blockstamp = self._get_blockstamp(last_slot_in_frame)
 
-        lido_validators = self.w3.lido_validators.get_lido_validators(last_slot_in_frame_blockstamp)
+        catalist_validators = self.w3.catalist_validators.get_catalist_validators(last_slot_in_frame_blockstamp)
         slashed_validators = filter_slashed_validators(
-            v for v in lido_validators if v.validator.pubkey in slashed_pubkeys
+            v for v in catalist_validators if v.validator.pubkey in slashed_pubkeys
         )
 
         return len(slashed_validators) > 0
@@ -270,7 +270,7 @@ class SafeBorder(Web3Converter):
 
     def _fetch_oracle_report_limits_list(self):
         return named_tuple_to_dataclass(
-            self.w3.lido_contracts.oracle_report_sanity_checker.functions.getOracleReportLimits().call(
+            self.w3.catalist_contracts.oracle_report_sanity_checker.functions.getOracleReportLimits().call(
                 block_identifier=self.blockstamp.block_hash
             ),
             OracleReportLimits
@@ -278,24 +278,24 @@ class SafeBorder(Web3Converter):
 
     def _fetch_finalization_max_negative_rebase_epoch_shift(self):
         return self.w3.to_int(
-            primitive=self.w3.lido_contracts.oracle_daemon_config.functions.get(
+            primitive=self.w3.catalist_contracts.oracle_daemon_config.functions.get(
                 'FINALIZATION_MAX_NEGATIVE_REBASE_EPOCH_SHIFT',
             ).call(block_identifier=self.blockstamp.block_hash)
         )
 
     def _get_bunker_start_timestamp(self) -> int:
         # If bunker mode is off returns max(uint256)
-        return self.w3.lido_contracts.withdrawal_queue_nft.functions.bunkerModeSinceTimestamp().call(
+        return self.w3.catalist_contracts.withdrawal_queue_nft.functions.bunkerModeSinceTimestamp().call(
             block_identifier=self.blockstamp.block_hash
         )
 
     def _get_last_finalized_request_id(self) -> int:
-        return self.w3.lido_contracts.withdrawal_queue_nft.functions.getLastFinalizedRequestId().call(
+        return self.w3.catalist_contracts.withdrawal_queue_nft.functions.getLastFinalizedRequestId().call(
             block_identifier=self.blockstamp.block_hash
         )
 
     def _get_withdrawal_request_status(self, request_id: int) -> Any:
-        return self.w3.lido_contracts.withdrawal_queue_nft.functions.getWithdrawalStatus([request_id]).call(
+        return self.w3.catalist_contracts.withdrawal_queue_nft.functions.getWithdrawalStatus([request_id]).call(
             block_identifier=self.blockstamp.block_hash
         )[0]
 

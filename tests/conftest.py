@@ -9,7 +9,7 @@ from web3.types import Timestamp
 import src.variables
 from src.variables import CONSENSUS_CLIENT_URI, EXECUTION_CLIENT_URI, KEYS_API_URI
 from src.typings import BlockStamp, SlotNumber, BlockNumber, EpochNumber, ReferenceBlockStamp
-from src.web3py.extensions import LidoContracts, TransactionUtils, LidoValidatorsProvider
+from src.web3py.extensions import CatalistContracts, TransactionUtils, CatalistValidatorsProvider
 from src.web3py.typings import Web3
 
 from src.web3py.contract_tweak import tweak_w3_contracts
@@ -107,16 +107,16 @@ def keys_api_client(request, responses_path, web3):
     web3.attach_modules({"kac": lambda: client})
 
 
-# ---- Lido contracts ----
+# ---- Catalist contracts ----
 @pytest.fixture()
 def contracts(web3, provider):
-    src.variables.LIDO_LOCATOR_ADDRESS = "0x548C1ED5C83Bdf19e567F4cd7Dd9AC4097088589"
-    LidoContracts._check_contracts = Mock()  # pylint: disable=protected-access
+    src.variables.CATALIST_LOCATOR_ADDRESS = "0x548C1ED5C83Bdf19e567F4cd7Dd9AC4097088589"
+    CatalistContracts._check_contracts = Mock()  # pylint: disable=protected-access
     with provider.use_mock(Path('common/contracts.json')):
         # First contracts deployment
         web3.attach_modules(
             {
-                'lido_contracts': LidoContracts,
+                'catalist_contracts': CatalistContracts,
             }
         )
 
@@ -131,12 +131,12 @@ def tx_utils(web3):
     )
 
 
-# ---- Lido validators ----
+# ---- Catalist validators ----
 @pytest.fixture()
-def lido_validators(web3, consensus_client, keys_api_client):
+def catalist_validators(web3, consensus_client, keys_api_client):
     web3.attach_modules(
         {
-            'lido_validators': LidoValidatorsProvider,
+            'catalist_validators': CatalistValidatorsProvider,
         }
     )
 

@@ -1,7 +1,7 @@
 from eth_typing import HexStr
 
 from src.utils.types import hex_str_to_bytes
-from src.web3py.extensions.lido_validators import LidoValidator, NodeOperatorGlobalIndex
+from src.web3py.extensions.catalist_validators import CatalistValidator, NodeOperatorGlobalIndex
 
 
 DATA_FORMAT_LIST = 1
@@ -12,7 +12,7 @@ VALIDATOR_INDEX_LENGTH = 8
 VALIDATOR_PUB_KEY_LENGTH = 48
 
 
-def encode_data(validators_to_eject: list[tuple[NodeOperatorGlobalIndex, LidoValidator]]):
+def encode_data(validators_to_eject: list[tuple[NodeOperatorGlobalIndex, CatalistValidator]]):
     """
     Encodes report data for Exit Bus Contract into bytes.
 
@@ -40,9 +40,9 @@ def encode_data(validators_to_eject: list[tuple[NodeOperatorGlobalIndex, LidoVal
 
 
 def sort_validators_to_eject(
-    validators_to_eject: list[tuple[NodeOperatorGlobalIndex, LidoValidator]],
-) -> list[tuple[NodeOperatorGlobalIndex, LidoValidator]]:
-    def _nog_validator_key(no_validator: tuple[NodeOperatorGlobalIndex, LidoValidator]) -> tuple[int, int, int]:
+    validators_to_eject: list[tuple[NodeOperatorGlobalIndex, CatalistValidator]],
+) -> list[tuple[NodeOperatorGlobalIndex, CatalistValidator]]:
+    def _nog_validator_key(no_validator: tuple[NodeOperatorGlobalIndex, CatalistValidator]) -> tuple[int, int, int]:
         (module_id, no_id), validator = no_validator
         return module_id, no_id, int(validator.index)
 

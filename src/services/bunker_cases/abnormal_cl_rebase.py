@@ -8,12 +8,12 @@ from web3.types import EventData
 from src.constants import MAX_EFFECTIVE_BALANCE, EFFECTIVE_BALANCE_INCREMENT
 from src.modules.submodules.typings import ChainConfig
 from src.providers.consensus.typings import Validator
-from src.providers.keys.typings import LidoKey
+from src.providers.keys.typings import CatalistKey
 from src.services.bunker_cases.typings import BunkerConfig
 from src.typings import ReferenceBlockStamp, Gwei, BlockNumber, SlotNumber, BlockStamp, EpochNumber
 from src.utils.slot import get_blockstamp, get_reference_blockstamp
 from src.utils.validator_state import calculate_active_effective_balance_sum
-from src.web3py.extensions.lido_validators import LidoValidator, LidoValidatorsProvider
+from src.web3py.extensions.catalist_validators import CatalistValidator, CatalistValidatorsProvider
 from src.web3py.typings import Web3
 
 
@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 class AbnormalClRebase:
 
     all_validators: list[Validator]
-    lido_validators: list[LidoValidator]
-    lido_keys: list[LidoKey]
+    catalist_validators: list[CatalistValidator]
+    catalist_keys: list[CatalistKey]
 
     def __init__(self, w3: Web3, c_conf: ChainConfig, b_conf: BunkerConfig):
         self.w3 = w3
@@ -35,7 +35,7 @@ class AbnormalClRebase:
         self,
         blockstamp: ReferenceBlockStamp,
         all_validators: list[Validator],
-        lido_validators: list[LidoValidator],
+        catalist_validators: list[CatalistValidator],
         current_report_cl_rebase: Gwei
     ) -> bool:
         """
@@ -49,12 +49,12 @@ class AbnormalClRebase:
         Like, don't check intraframe sampled CL rebase and look only on normal CL rebase
         """
         self.all_validators = all_validators
-        self.lido_validators = lido_validators
-        self.lido_keys = self.w3.kac.get_used_lido_keys(blockstamp)
+        self.catalist_validators = catalist_validators
+        self.catalist_keys = self.w3.kac.get_used_catalist_keys(blockstamp)
 
         logger.info({"msg": "Checking abnormal CL rebase"})
 
-        normal_report_cl_rebase = self._calculate_lido_normal_cl_rebase(blockstamp)
+        normal_report_cl_rebase = self._calculate_catalist_normal_cl_rebase(blockstamp)
 
         # If there were no cl balance, no need to check changes
         if normal_report_cl_rebase == 0:
@@ -78,31 +78,31 @@ class AbnormalClRebase:
 
         return False
 
-    def _calculate_lido_normal_cl_rebase(self, blockstamp: ReferenceBlockStamp) -> Gwei:
+    def _calculate_catalist_normal_cl_rebase(self, blockstamp: ReferenceBlockStamp) -> Gwei:
         """
-        Calculate normal CL rebase for Lido validators (relative to all validators and the previous Lido frame)
-        for current frame for Lido validators
+        Calculate normal CL rebase for Catalist validators (relative to all validators and the previous Catalist frame)
+        for current frame for Catalist validators
         """
         last_report_blockstamp = self._get_last_report_reference_blockstamp(blockstamp)
 
         epochs_passed_since_last_report = blockstamp.ref_epoch - last_report_blockstamp.ref_epoch
 
         last_report_all_validators = self.w3.cc.get_validators_no_cache(last_report_blockstamp)
-        last_report_lido_validators = LidoValidatorsProvider.merge_validators_with_keys(
-            self.lido_keys, last_report_all_validators
+        last_report_catalist_validators = CatalistValidatorsProvider.merge_validators_with_keys(
+            self.catalist_keys, last_report_all_validators
         )
 
         mean_sum_of_all_effective_balance = AbnormalClRebase.get_mean_sum_of_effective_balance(
             last_report_blockstamp, blockstamp, last_report_all_validators, self.all_validators
         )
-        mean_sum_of_lido_effective_balance = AbnormalClRebase.get_mean_sum_of_effective_balance(
-            last_report_blockstamp, blockstamp, last_report_lido_validators, self.lido_validators
+        mean_sum_of_catalist_effective_balance = AbnormalClRebase.get_mean_sum_of_effective_balance(
+            last_report_blockstamp, blockstamp, last_report_catalist_validators, self.catalist_validators
         )
 
         normal_cl_rebase = AbnormalClRebase.calculate_normal_cl_rebase(
             self.b_conf,
             mean_sum_of_all_effective_balance,
-            mean_sum_of_lido_effective_balance,
+            mean_sum_of_catalist_effective_balance,
             epochs_passed_since_last_report
         )
 
@@ -167,7 +167,7 @@ class AbnormalClRebase:
         """
         Calculate CL rebase from prev_blockstamp to ref_blockstamp.
         Skimmed validator rewards are sent to 0x01 withdrawal credentials address
-        which in Lido case is WithdrawalVault contract.
+        which in Catalist case is WithdrawalVault contract.
         To account for all changes in validators' balances, we must account
         withdrawn events from WithdrawalVault contract.
         Check for these events is enough to account for all withdrawals since the protocol assumes that
@@ -177,26 +177,26 @@ class AbnormalClRebase:
             # Can't calculate rebase between the same block
             return Gwei(0)
 
-        prev_lido_validators = LidoValidatorsProvider.merge_validators_with_keys(
-            self.lido_keys,
+        prev_catalist_validators = CatalistValidatorsProvider.merge_validators_with_keys(
+            self.catalist_keys,
             self.w3.cc.get_validators_no_cache(prev_blockstamp),
         )
 
-        # Get Lido validators' balances with WithdrawalVault balance
-        ref_lido_balance_with_vault = self._get_lido_validators_balance_with_vault(
-            ref_blockstamp, self.lido_validators
+        # Get Catalist validators' balances with WithdrawalVault balance
+        ref_catalist_balance_with_vault = self._get_catalist_validators_balance_with_vault(
+            ref_blockstamp, self.catalist_validators
         )
-        prev_lido_balance_with_vault = self._get_lido_validators_balance_with_vault(
-            prev_blockstamp, prev_lido_validators
+        prev_catalist_balance_with_vault = self._get_catalist_validators_balance_with_vault(
+            prev_blockstamp, prev_catalist_validators
         )
 
-        # Raw CL rebase is calculated as difference between reference and previous Lido validators' balances
+        # Raw CL rebase is calculated as difference between reference and previous Catalist validators' balances
         # Without accounting withdrawals from WithdrawalVault
-        raw_cl_rebase = ref_lido_balance_with_vault - prev_lido_balance_with_vault
+        raw_cl_rebase = ref_catalist_balance_with_vault - prev_catalist_balance_with_vault
 
         # We should account validators who have been appeared between blocks
         validators_count_diff_in_gwei = AbnormalClRebase.calculate_validators_count_diff_in_gwei(
-            prev_lido_validators, self.lido_validators
+            prev_catalist_validators, self.catalist_validators
         )
         # And withdrawals from WithdrawalVault
         withdrawn_from_vault = self._get_withdrawn_from_vault_between_blocks(prev_blockstamp, ref_blockstamp)
@@ -210,15 +210,15 @@ class AbnormalClRebase:
 
         return cl_rebase
 
-    def _get_lido_validators_balance_with_vault(
-        self, blockstamp: BlockStamp, lido_validators: list[LidoValidator]
+    def _get_catalist_validators_balance_with_vault(
+        self, blockstamp: BlockStamp, catalist_validators: list[CatalistValidator]
     ) -> Gwei:
         """
-        Get Lido validator balance with withdrawals vault balance
+        Get Catalist validator balance with withdrawals vault balance
         """
-        real_cl_balance = AbnormalClRebase.calculate_validators_balance_sum(lido_validators)
+        real_cl_balance = AbnormalClRebase.calculate_validators_balance_sum(catalist_validators)
         withdrawals_vault_balance = int(
-            self.w3.from_wei(self.w3.lido_contracts.get_withdrawal_balance_no_cache(blockstamp), "gwei")
+            self.w3.from_wei(self.w3.catalist_contracts.get_withdrawal_balance_no_cache(blockstamp), "gwei")
         )
         return Gwei(real_cl_balance + withdrawals_vault_balance)
 
@@ -255,14 +255,14 @@ class AbnormalClRebase:
 
     def _get_eth_distributed_events(self, from_block: BlockNumber, to_block: BlockNumber) -> list[EventData]:
         """Get ETHDistributed events between blocks"""
-        return self.w3.lido_contracts.lido.events.ETHDistributed.get_logs(  # type: ignore[attr-defined]
+        return self.w3.catalist_contracts.catalist.events.ETHDistributed.get_logs(  # type: ignore[attr-defined]
             fromBlock=from_block,
             toBlock=to_block,
         )
 
     def _get_last_report_reference_blockstamp(self, ref_blockstamp: ReferenceBlockStamp) -> ReferenceBlockStamp:
         """Get blockstamp of last report"""
-        last_report_ref_slot = self.w3.lido_contracts.get_accounting_last_processing_ref_slot(ref_blockstamp)
+        last_report_ref_slot = self.w3.catalist_contracts.get_accounting_last_processing_ref_slot(ref_blockstamp)
         return get_reference_blockstamp(
             self.w3.cc,
             last_report_ref_slot,
@@ -277,9 +277,9 @@ class AbnormalClRebase:
     ) -> Gwei:
         """
         Handle 32 ETH balances of freshly baked validators, who was appeared between epochs
-        Lido validators are counted by public keys that the protocol deposited with 32 ETH,
+        Catalist validators are counted by public keys that the protocol deposited with 32 ETH,
         so we can safely count the differences in the number of validators when they occur by deposit size.
-        Any pre-deposits to Lido keys will not be counted until the key is deposited through the protocol
+        Any pre-deposits to Catalist keys will not be counted until the key is deposited through the protocol
         and goes into `used` state
         """
         validators_diff = len(ref_validators) - len(prev_validators)
@@ -321,7 +321,7 @@ class AbnormalClRebase:
     def calculate_normal_cl_rebase(
         bunker_config: BunkerConfig,
         mean_sum_of_all_effective_balance: Gwei,
-        mean_sum_of_lido_effective_balance: Gwei,
+        mean_sum_of_catalist_effective_balance: Gwei,
         epochs_passed: int,
     ) -> Gwei:
         """
@@ -333,16 +333,16 @@ class AbnormalClRebase:
          * Instead of using data on active validators for each epoch
           estimation on number of active validators through interception of
           active validators between current oracle report epoch and last one - Randomness within measurement algorithm
-         * Not absolutely ideal performance of Lido Validators and network as a whole  - Randomness of real world
+         * Not absolutely ideal performance of Catalist Validators and network as a whole  - Randomness of real world
         If the difference between observed real CL rewards and its theoretical value (normal_cl_rebase) couldn't be explained by
-        those 4 factors that means there is an additional factor leading to lower rewards - incidents within Lido or BeaconChain.
+        those 4 factors that means there is an additional factor leading to lower rewards - incidents within Catalist or BeaconChain.
         To formalize “high enough” difference we’re suggesting `normalized_cl_reward_per_epoch` constant
         represent ethereum specification and equals to `BASE_REWARD_FACTOR` constant
         """
         # It should be at least 1 ETH to avoid division by zero
         mean_sum_of_all_effective_balance = max(Gwei(EFFECTIVE_BALANCE_INCREMENT), mean_sum_of_all_effective_balance)
         normal_cl_rebase = int(
-            (bunker_config.normalized_cl_reward_per_epoch * mean_sum_of_lido_effective_balance * epochs_passed)
+            (bunker_config.normalized_cl_reward_per_epoch * mean_sum_of_catalist_effective_balance * epochs_passed)
             / math.sqrt(mean_sum_of_all_effective_balance)
         )
         return Gwei(normal_cl_rebase)

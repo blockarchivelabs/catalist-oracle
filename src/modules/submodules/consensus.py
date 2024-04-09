@@ -75,7 +75,7 @@ class ConsensusModule(ABC):
     def _get_consensus_contract(self, blockstamp: BlockStamp) -> Contract | AsyncContract:
         return self.w3.eth.contract(
             address=self._get_consensus_contract_address(blockstamp),
-            abi=self.w3.lido_contracts.load_abi('HashConsensus'),
+            abi=self.w3.catalist_contracts.load_abi('HashConsensus'),
             decode_tuples=True,
         )
 

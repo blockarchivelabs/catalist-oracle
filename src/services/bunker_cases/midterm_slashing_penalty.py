@@ -11,7 +11,7 @@ from src.modules.submodules.typings import FrameConfig, ChainConfig
 from src.providers.consensus.typings import Validator
 from src.typings import EpochNumber, Gwei, ReferenceBlockStamp, FrameNumber, SlotNumber
 from src.utils.validator_state import calculate_total_active_effective_balance
-from src.web3py.extensions.lido_validators import LidoValidator
+from src.web3py.extensions.catalist_validators import CatalistValidator
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class MidtermSlashingPenalty:
         frame_config: FrameConfig,
         chain_config: ChainConfig,
         all_validators: list[Validator],
-        lido_validators: list[LidoValidator],
+        catalist_validators: list[CatalistValidator],
         current_report_cl_rebase: Gwei,
         last_report_ref_slot: SlotNumber
     ) -> bool:
@@ -43,33 +43,33 @@ class MidtermSlashingPenalty:
         )
         logger.info({"msg": f"All slashings with impact on midterm penalties: {len(all_slashed_validators)}"})
 
-        # Put all Lido slashed validators to future frames by midterm penalty epoch
-        future_frames_lido_validators = MidtermSlashingPenalty.get_lido_validators_with_future_midterm_epoch(
-            blockstamp.ref_epoch, frame_config, lido_validators
+        # Put all Catalist slashed validators to future frames by midterm penalty epoch
+        future_frames_catalist_validators = MidtermSlashingPenalty.get_catalist_validators_with_future_midterm_epoch(
+            blockstamp.ref_epoch, frame_config, catalist_validators
         )
 
-        # If no one Lido in current not withdrawn slashed validators
+        # If no one Catalist in current not withdrawn slashed validators
         # and no one midterm slashing epoch in the future - no need to bunker
-        if not future_frames_lido_validators:
+        if not future_frames_catalist_validators:
             return False
 
         # We should calculate total balance for each midterm penalty epoch and
         # make projection based on the current state of the chain
         total_balance = calculate_total_active_effective_balance(all_validators, blockstamp.ref_epoch)
 
-        # Calculate sum of Lido midterm penalties in each future frame
-        frames_lido_midterm_penalties = MidtermSlashingPenalty.get_future_midterm_penalty_sum_in_frames(
-            blockstamp.ref_epoch, all_slashed_validators,  total_balance, future_frames_lido_validators,
+        # Calculate sum of Catalist midterm penalties in each future frame
+        frames_catalist_midterm_penalties = MidtermSlashingPenalty.get_future_midterm_penalty_sum_in_frames(
+            blockstamp.ref_epoch, all_slashed_validators,  total_balance, future_frames_catalist_validators,
         )
-        max_lido_midterm_penalty = max(frames_lido_midterm_penalties.values())
-        logger.info({"msg": f"Max lido midterm penalty: {max_lido_midterm_penalty}"})
+        max_catalist_midterm_penalty = max(frames_catalist_midterm_penalties.values())
+        logger.info({"msg": f"Max catalist midterm penalty: {max_catalist_midterm_penalty}"})
 
         # Compare with calculated frame CL rebase on pessimistic strategy
         # and whether they will cover future midterm penalties, so that the bunker is better to be turned on than not
         frame_cl_rebase = MidtermSlashingPenalty.get_frame_cl_rebase_from_report_cl_rebase(
             frame_config, chain_config, current_report_cl_rebase, blockstamp, last_report_ref_slot
         )
-        if max_lido_midterm_penalty > frame_cl_rebase:
+        if max_catalist_midterm_penalty > frame_cl_rebase:
             return True
 
         return False
@@ -127,16 +127,16 @@ class MidtermSlashingPenalty:
         return [EpochNumber(epoch) for epoch in range(earliest_possible_slashed_epoch, latest_possible_epoch + 1)]
 
     @staticmethod
-    def get_lido_validators_with_future_midterm_epoch(
+    def get_catalist_validators_with_future_midterm_epoch(
         ref_epoch: EpochNumber,
         frame_config: FrameConfig,
-        lido_validators: list[LidoValidator],
-    ) -> dict[FrameNumber, list[LidoValidator]]:
+        catalist_validators: list[CatalistValidator],
+    ) -> dict[FrameNumber, list[CatalistValidator]]:
         """
         Put validators to frame buckets by their midterm penalty epoch to calculate penalties impact in each frame
         """
-        buckets: dict[FrameNumber, list[LidoValidator]] = defaultdict(list[LidoValidator])
-        for validator in lido_validators:
+        buckets: dict[FrameNumber, list[CatalistValidator]] = defaultdict(list[CatalistValidator])
+        for validator in catalist_validators:
             if not validator.validator.slashed:
                 # We need only slashed validators
                 continue
@@ -154,7 +154,7 @@ class MidtermSlashingPenalty:
         ref_epoch: EpochNumber,
         all_slashed_validators: list[Validator],
         total_balance: Gwei,
-        per_frame_validators: dict[FrameNumber, list[LidoValidator]],
+        per_frame_validators: dict[FrameNumber, list[CatalistValidator]],
     ) -> dict[FrameNumber, Gwei]:
         """Calculate sum of midterm penalties in each frame"""
         per_frame_midterm_penalty_sum: dict[FrameNumber, Gwei] = {}
@@ -173,7 +173,7 @@ class MidtermSlashingPenalty:
         ref_epoch: EpochNumber,
         all_slashed_validators: list[Validator],
         total_balance: Gwei,
-        midterm_penalized_validators_in_frame: list[LidoValidator]
+        midterm_penalized_validators_in_frame: list[CatalistValidator]
     ) -> Gwei:
         """Predict penalty in frame"""
         penalty_in_frame = 0
@@ -189,7 +189,7 @@ class MidtermSlashingPenalty:
 
     @staticmethod
     def get_validator_midterm_penalty(
-        validator: LidoValidator,
+        validator: CatalistValidator,
         bound_slashed_validators_count: int,
         total_balance: Gwei
     ) -> Gwei:

@@ -27,15 +27,15 @@ def subject(web3, past_blockstamp, chain_config, frame_config, contracts, keys_a
 
 
 def test_happy_path(subject, past_blockstamp):
-    withdrawal_vault_balance = subject.w3.lido_contracts.get_withdrawal_balance(past_blockstamp)
-    el_rewards_vault_balance = subject.w3.lido_contracts.get_el_vault_balance(past_blockstamp)
+    withdrawal_vault_balance = subject.w3.catalist_contracts.get_withdrawal_balance(past_blockstamp)
+    el_rewards_vault_balance = subject.w3.catalist_contracts.get_el_vault_balance(past_blockstamp)
 
     expected_min_withdrawal_id = (
-        subject.w3.lido_contracts.withdrawal_queue_nft.functions.getLastFinalizedRequestId().call(
+        subject.w3.catalist_contracts.withdrawal_queue_nft.functions.getLastFinalizedRequestId().call(
             block_identifier=past_blockstamp.block_hash
         )
     )
-    expected_max_withdrawal_id = subject.w3.lido_contracts.withdrawal_queue_nft.functions.getLastRequestId().call(
+    expected_max_withdrawal_id = subject.w3.catalist_contracts.withdrawal_queue_nft.functions.getLastRequestId().call(
         block_identifier=past_blockstamp.block_hash
     )
 

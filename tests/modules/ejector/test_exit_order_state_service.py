@@ -6,7 +6,7 @@ from src.modules.submodules.typings import ChainConfig
 from src.providers.consensus.typings import ValidatorState, Validator, ValidatorStatus
 from src.services.exit_order_iterator import NodeOperatorPredictableState
 from src.services.exit_order_iterator_state import ExitOrderIteratorStateService
-from src.web3py.extensions.lido_validators import (
+from src.web3py.extensions.catalist_validators import (
     NodeOperator,
     StakingModule,
 )
@@ -83,8 +83,8 @@ def mock_get_validators(exit_order_state):
 
 
 @pytest.fixture
-def mock_get_lido_validators(exit_order_state):
-    def _get_lido_validators(blockstamp):
+def mock_get_catalist_validators(exit_order_state):
+    def _get_catalist_validators(blockstamp):
         responses = {
             100: simple_validators(0, 9),
             200: [
@@ -94,7 +94,7 @@ def mock_get_lido_validators(exit_order_state):
         }
         return responses[blockstamp.slot_number]
 
-    exit_order_state.w3.lido_validators.get_lido_validators = Mock(side_effect=_get_lido_validators)
+    exit_order_state.w3.catalist_validators.get_catalist_validators = Mock(side_effect=_get_catalist_validators)
 
 
 @pytest.fixture
@@ -137,7 +137,7 @@ def mock_get_oracle_daemon_config_get(exit_order_state, contracts):
 
         return func
 
-    exit_order_state.w3.lido_contracts.oracle_daemon_config.functions.get = Mock(
+    exit_order_state.w3.catalist_contracts.oracle_daemon_config.functions.get = Mock(
         side_effect=_get_oracle_daemon_config_get
     )
 
@@ -145,7 +145,7 @@ def mock_get_oracle_daemon_config_get(exit_order_state, contracts):
 @pytest.fixture
 def exit_order_state(
     web3,
-    lido_validators,
+    catalist_validators,
     past_blockstamp,
 ) -> ExitOrderIteratorStateService:
     """Returns minimal initialized ValidatorsExit service instance"""
@@ -156,7 +156,7 @@ def exit_order_state(
 
 
 @pytest.mark.unit
-def test_get_exitable_lido_validators(
+def test_get_exitable_catalist_validators(
     exit_order_state,
 ):
     exit_order_state._operator_validators = {
@@ -175,7 +175,7 @@ def test_get_exitable_lido_validators(
         (1, 2): -1,
     }
 
-    result = exit_order_state.get_exitable_lido_validators()
+    result = exit_order_state.get_exitable_catalist_validators()
 
     assert result == [
         *simple_validators(12, 19),
@@ -255,7 +255,7 @@ def test_get_exitable_lido_validators(
         ),
     ],
 )
-def test_prepare_lido_node_operator_stats(
+def test_prepare_catalist_node_operator_stats(
     exit_order_state,
     mock_get_recently_requests_to_exit_indexes,
     blockstamp,
@@ -285,14 +285,14 @@ def test_prepare_lido_node_operator_stats(
         (1, 2): -1,
     }
 
-    result = exit_order_state.prepare_lido_node_operator_stats(blockstamp, chain_config)
+    result = exit_order_state.prepare_catalist_node_operator_stats(blockstamp, chain_config)
 
     assert result == expected_result
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    'blockstamp, lido_node_operators_stats, expected_result',
+    'blockstamp, catalist_node_operators_stats, expected_result',
     [
         (ReferenceBlockStampFactory.build(slot_number=100), {}, 10),
         (
@@ -313,12 +313,12 @@ def test_prepare_lido_node_operator_stats(
 def test_get_total_predictable_validators_count(
     exit_order_state,
     mock_get_validators,
-    mock_get_lido_validators,
-    lido_node_operators_stats,
+    mock_get_catalist_validators,
+    catalist_node_operators_stats,
     blockstamp,
     expected_result,
 ):
-    result = exit_order_state.get_total_predictable_validators_count(blockstamp, lido_node_operators_stats)
+    result = exit_order_state.get_total_predictable_validators_count(blockstamp, catalist_node_operators_stats)
 
     assert result == expected_result
 
@@ -378,9 +378,9 @@ def test_get_operator_network_penetration_threshold(
 
 
 @pytest.mark.unit
-def test_exit_order_iterator_state_service_init(web3, past_blockstamp, lido_validators, contracts):
-    web3.lido_validators.get_lido_node_operators = lambda _: []
-    web3.lido_validators.get_lido_validators_by_node_operators = lambda _: []
+def test_exit_order_iterator_state_service_init(web3, past_blockstamp, catalist_validators, contracts):
+    web3.catalist_validators.get_catalist_node_operators = lambda _: []
+    web3.catalist_validators.get_catalist_validators_by_node_operators = lambda _: []
     ExitOrderIteratorStateService.get_operators_with_last_exited_validator_indexes = lambda _, __: {}
     exit_order_iterator_state_service = ExitOrderIteratorStateService(web3, past_blockstamp)
     assert exit_order_iterator_state_service is not None

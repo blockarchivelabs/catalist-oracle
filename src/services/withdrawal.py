@@ -91,38 +91,38 @@ class Withdrawal:
         return list(filter(lambda value: value > 0, state.batches))
 
     def _fetch_last_finalized_request_id(self) -> int:
-        return self.w3.lido_contracts.withdrawal_queue_nft.functions.getLastFinalizedRequestId().call(
+        return self.w3.catalist_contracts.withdrawal_queue_nft.functions.getLastFinalizedRequestId().call(
             block_identifier=self.blockstamp.block_hash
         )
 
     def _fetch_last_request_id(self) -> int:
-        return self.w3.lido_contracts.withdrawal_queue_nft.functions.getLastRequestId().call(
+        return self.w3.catalist_contracts.withdrawal_queue_nft.functions.getLastRequestId().call(
             block_identifier=self.blockstamp.block_hash
         )
 
     def _fetch_buffered_ether(self) -> Wei:
-        return Wei(self.w3.lido_contracts.lido.functions.getBufferedEther().call(
+        return Wei(self.w3.catalist_contracts.catalist.functions.getBufferedEther().call(
             block_identifier=self.blockstamp.block_hash
         ))
 
     def _fetch_unfinalized_steth(self) -> Wei:
-        return Wei(self.w3.lido_contracts.withdrawal_queue_nft.functions.unfinalizedStETH().call(
+        return Wei(self.w3.catalist_contracts.withdrawal_queue_nft.functions.unfinalizedStETH().call(
             block_identifier=self.blockstamp.block_hash
         ))
 
     def _is_requests_finalization_paused(self) -> bool:
-        return self.w3.lido_contracts.withdrawal_queue_nft.functions.isPaused().call(
+        return self.w3.catalist_contracts.withdrawal_queue_nft.functions.isPaused().call(
             block_identifier=self.blockstamp.block_hash
         )
 
     def _fetch_max_batches_length(self) -> int:
-        return self.w3.lido_contracts.withdrawal_queue_nft.functions.MAX_BATCHES_LENGTH().call(
+        return self.w3.catalist_contracts.withdrawal_queue_nft.functions.MAX_BATCHES_LENGTH().call(
             block_identifier=self.blockstamp.block_hash
         )
 
     def _fetch_finalization_batches(self, share_rate: int, timestamp: int, batch_state: BatchState) -> BatchState:
         return named_tuple_to_dataclass(
-            self.w3.lido_contracts.withdrawal_queue_nft.functions.calculateFinalizationBatches(
+            self.w3.catalist_contracts.withdrawal_queue_nft.functions.calculateFinalizationBatches(
                 share_rate,
                 timestamp,
                 FINALIZATION_BATCH_MAX_REQUEST_COUNT,

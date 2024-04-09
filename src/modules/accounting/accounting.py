@@ -9,7 +9,7 @@ from src.constants import SHARE_RATE_PRECISION_E27
 from src.modules.accounting.typings import (
     ReportData,
     AccountingProcessingState,
-    LidoReportRebase,
+    CatalistReportRebase,
     SharesRequestedToBurn,
 )
 from src.metrics.prometheus.accounting import (
@@ -19,7 +19,7 @@ from src.metrics.prometheus.accounting import (
     ACCOUNTING_WITHDRAWAL_VAULT_BALANCE_WEI
 )
 from src.metrics.prometheus.duration_meter import duration_meter
-from src.services.validator_state import LidoValidatorStateService
+from src.services.validator_state import CatalistValidatorStateService
 from src.modules.submodules.consensus import ConsensusModule
 from src.modules.submodules.oracle_module import BaseModule, ModuleExecuteDelay
 from src.services.withdrawal import Withdrawal
@@ -29,7 +29,7 @@ from src.utils.abi import named_tuple_to_dataclass
 from src.utils.cache import global_lru_cache as lru_cache
 from src.variables import ALLOW_REPORTING_IN_BUNKER_MODE
 from src.web3py.typings import Web3
-from src.web3py.extensions.lido_validators import StakingModule, NodeOperatorGlobalIndex, StakingModuleId
+from src.web3py.extensions.catalist_validators import StakingModule, NodeOperatorGlobalIndex, StakingModuleId
 
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class Accounting(BaseModule, ConsensusModule):
     Report goes in tree phases:
         - Send report hash
         - Send report data (extra data hash inside)
-            Contains information about lido states, last withdrawal request to finalize and exited validators count by module.
+            Contains information about catalist states, last withdrawal request to finalize and exited validators count by module.
         - Send extra data
             Contains stuck and exited validators count by each node operator.
     """
@@ -50,14 +50,14 @@ class Accounting(BaseModule, ConsensusModule):
     CONTRACT_VERSION = 1
 
     def __init__(self, w3: Web3):
-        self.report_contract = w3.lido_contracts.accounting_oracle
+        self.report_contract = w3.catalist_contracts.accounting_oracle
         super().__init__(w3)
 
-        self.lido_validator_state_service = LidoValidatorStateService(self.w3)
+        self.catalist_validator_state_service = CatalistValidatorStateService(self.w3)
         self.bunker_service = BunkerService(self.w3)
 
     def refresh_contracts(self):
-        self.report_contract = self.w3.lido_contracts.accounting_oracle
+        self.report_contract = self.w3.catalist_contracts.accounting_oracle
 
     def execute_module(self, last_finalized_blockstamp: BlockStamp) -> ModuleExecuteDelay:
         report_blockstamp = self.get_blockstamp_for_report(last_finalized_blockstamp)
@@ -90,7 +90,7 @@ class Accounting(BaseModule, ConsensusModule):
         self._submit_extra_data(blockstamp)
 
     def _submit_extra_data(self, blockstamp: ReferenceBlockStamp) -> None:
-        extra_data = self.lido_validator_state_service.get_extra_data(blockstamp, self.get_chain_config(blockstamp))
+        extra_data = self.catalist_validator_state_service.get_extra_data(blockstamp, self.get_chain_config(blockstamp))
 
         if extra_data.extra_data:
             tx = self.report_contract.functions.submitReportExtraDataList(extra_data.extra_data)
@@ -143,11 +143,11 @@ class Accounting(BaseModule, ConsensusModule):
 
     # ---------------------------------------- Build report ----------------------------------------
     def _calculate_report(self, blockstamp: ReferenceBlockStamp) -> ReportData:
-        validators_count, cl_balance = self._get_consensus_lido_state(blockstamp)
+        validators_count, cl_balance = self._get_consensus_catalist_state(blockstamp)
 
         staking_module_ids_list, exit_validators_count_list = self._get_newly_exited_validators_by_modules(blockstamp)
 
-        extra_data = self.lido_validator_state_service.get_extra_data(blockstamp, self.get_chain_config(blockstamp))
+        extra_data = self.catalist_validator_state_service.get_extra_data(blockstamp, self.get_chain_config(blockstamp))
         finalization_share_rate, finalization_batches = self._get_finalization_data(blockstamp)
 
         report_data = ReportData(
@@ -157,8 +157,8 @@ class Accounting(BaseModule, ConsensusModule):
             cl_balance_gwei=cl_balance,
             staking_module_ids_with_exited_validators=staking_module_ids_list,
             count_exited_validators_by_staking_module=exit_validators_count_list,
-            withdrawal_vault_balance=self.w3.lido_contracts.get_withdrawal_balance(blockstamp),
-            el_rewards_vault_balance=self.w3.lido_contracts.get_el_vault_balance(blockstamp),
+            withdrawal_vault_balance=self.w3.catalist_contracts.get_withdrawal_balance(blockstamp),
+            el_rewards_vault_balance=self.w3.catalist_contracts.get_el_vault_balance(blockstamp),
             shares_requested_to_burn=self.get_shares_to_burn(blockstamp),
             withdrawal_finalization_batches=finalization_batches,
             finalization_share_rate=finalization_share_rate,
@@ -183,8 +183,8 @@ class Accounting(BaseModule, ConsensusModule):
         Calculate exited validators count in all modules.
         Exclude modules without changes from the report.
         """
-        staking_modules = self.w3.lido_validators.get_staking_modules(blockstamp)
-        exited_validators = self.lido_validator_state_service.get_exited_lido_validators(blockstamp)
+        staking_modules = self.w3.catalist_validators.get_staking_modules(blockstamp)
+        exited_validators = self.catalist_validator_state_service.get_exited_catalist_validators(blockstamp)
 
         return self.get_updated_modules_stats(staking_modules, exited_validators)
 
@@ -206,13 +206,13 @@ class Accounting(BaseModule, ConsensusModule):
         return list(module_stats.keys()), list(module_stats.values())
 
     @lru_cache(maxsize=1)
-    def _get_consensus_lido_state(self, blockstamp: ReferenceBlockStamp) -> tuple[int, Gwei]:
-        lido_validators = self.w3.lido_validators.get_lido_validators(blockstamp)
+    def _get_consensus_catalist_state(self, blockstamp: ReferenceBlockStamp) -> tuple[int, Gwei]:
+        catalist_validators = self.w3.catalist_validators.get_catalist_validators(blockstamp)
 
-        count = len(lido_validators)
-        total_balance = Gwei(sum(int(validator.balance) for validator in lido_validators))
+        count = len(catalist_validators)
+        total_balance = Gwei(sum(int(validator.balance) for validator in catalist_validators))
 
-        logger.info({'msg': 'Calculate consensus lido state.', 'value': (count, total_balance)})
+        logger.info({'msg': 'Calculate consensus catalist state.', 'value': (count, total_balance)})
         return count, total_balance
 
     def _get_finalization_data(self, blockstamp: ReferenceBlockStamp) -> tuple[int, list[int]]:
@@ -237,40 +237,40 @@ class Accounting(BaseModule, ConsensusModule):
         return share_rate, batches
 
     @lru_cache(maxsize=1)
-    def simulate_cl_rebase(self, blockstamp: ReferenceBlockStamp) -> LidoReportRebase:
+    def simulate_cl_rebase(self, blockstamp: ReferenceBlockStamp) -> CatalistReportRebase:
         """
         Simulate rebase excluding any execution rewards.
         This used to check worst scenarios in bunker service.
         """
         return self.simulate_rebase_after_report(blockstamp, el_rewards=Wei(0))
 
-    def simulate_full_rebase(self, blockstamp: ReferenceBlockStamp) -> LidoReportRebase:
-        el_rewards = self.w3.lido_contracts.get_el_vault_balance(blockstamp)
+    def simulate_full_rebase(self, blockstamp: ReferenceBlockStamp) -> CatalistReportRebase:
+        el_rewards = self.w3.catalist_contracts.get_el_vault_balance(blockstamp)
         return self.simulate_rebase_after_report(blockstamp, el_rewards=el_rewards)
 
     def simulate_rebase_after_report(
         self,
         blockstamp: ReferenceBlockStamp,
         el_rewards: Wei,
-    ) -> LidoReportRebase:
+    ) -> CatalistReportRebase:
         """
         To calculate how much withdrawal request protocol can finalize - needs finalization share rate after this report
         """
-        validators_count, cl_balance = self._get_consensus_lido_state(blockstamp)
+        validators_count, cl_balance = self._get_consensus_catalist_state(blockstamp)
 
         chain_conf = self.get_chain_config(blockstamp)
 
-        simulated_tx = self.w3.lido_contracts.lido.functions.handleOracleReport(
+        simulated_tx = self.w3.catalist_contracts.catalist.functions.handleOracleReport(
             # We use block timestamp, instead of slot timestamp,
             # because missed slot will break simulation contract logics
-            # Details: https://github.com/lidofinance/lido-oracle/issues/291
+            # Details: https://github.com/catalistfinance/catalist-oracle/issues/291
             blockstamp.block_timestamp,  # _reportTimestamp
             self._get_slots_elapsed_from_last_report(blockstamp) * chain_conf.seconds_per_slot,  # _timeElapsed
             # CL values
             validators_count,  # _clValidators
             Web3.to_wei(cl_balance, 'gwei'),  # _clBalance
             # EL values
-            self.w3.lido_contracts.get_withdrawal_balance(blockstamp),  # _withdrawalVaultBalance
+            self.w3.catalist_contracts.get_withdrawal_balance(blockstamp),  # _withdrawalVaultBalance
             el_rewards,  # _elRewardsVaultBalance
             self.get_shares_to_burn(blockstamp),  # _sharesRequestedToBurn
             # Decision about withdrawals processing
@@ -278,21 +278,21 @@ class Accounting(BaseModule, ConsensusModule):
             0,  # _simulatedShareRate
         )
 
-        logger.info({'msg': 'Simulate lido rebase for report.', 'value': simulated_tx.args})
+        logger.info({'msg': 'Simulate catalist rebase for report.', 'value': simulated_tx.args})
 
         result = simulated_tx.call(
-            transaction={'from': self.w3.lido_contracts.accounting_oracle.address},
+            transaction={'from': self.w3.catalist_contracts.accounting_oracle.address},
             block_identifier=blockstamp.block_hash,
         )
 
-        logger.info({'msg': 'Fetch simulated lido rebase for report.', 'value': result})
+        logger.info({'msg': 'Fetch simulated catalist rebase for report.', 'value': result})
 
-        return LidoReportRebase(*result)
+        return CatalistReportRebase(*result)
 
     @lru_cache(maxsize=1)
     def get_shares_to_burn(self, blockstamp: BlockStamp) -> int:
         shares_data = named_tuple_to_dataclass(
-            self.w3.lido_contracts.burner.functions.getSharesRequestedToBurn().call(
+            self.w3.catalist_contracts.burner.functions.getSharesRequestedToBurn().call(
                 block_identifier=blockstamp.block_hash,
             ),
             SharesRequestedToBurn,
@@ -304,7 +304,7 @@ class Accounting(BaseModule, ConsensusModule):
         chain_conf = self.get_chain_config(blockstamp)
         frame_config = self.get_frame_config(blockstamp)
 
-        last_ref_slot = self.w3.lido_contracts.get_accounting_last_processing_ref_slot(blockstamp)
+        last_ref_slot = self.w3.catalist_contracts.get_accounting_last_processing_ref_slot(blockstamp)
 
         if last_ref_slot:
             slots_elapsed = blockstamp.ref_slot - last_ref_slot

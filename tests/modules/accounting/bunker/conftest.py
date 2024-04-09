@@ -5,7 +5,7 @@ import pytest
 from src.modules.submodules.typings import ChainConfig
 from src.providers.consensus.typings import Validator, ValidatorStatus, ValidatorState
 from src.services.bunker import BunkerService
-from src.providers.keys.typings import LidoKey
+from src.providers.keys.typings import CatalistKey
 from src.services.bunker_cases.abnormal_cl_rebase import AbnormalClRebase
 from src.services.bunker_cases.typings import BunkerConfig
 from src.typings import BlockNumber, BlockStamp, ReferenceBlockStamp
@@ -19,8 +19,8 @@ def simple_blockstamp(block_number: int) -> BlockStamp:
     return BlockStamp(f"0x{block_number}", block_number, '', block_number, 0)
 
 
-def simple_key(pubkey: str) -> LidoKey:
-    key = object.__new__(LidoKey)
+def simple_key(pubkey: str) -> CatalistKey:
+    key = object.__new__(CatalistKey)
     key.key = pubkey
     return key
 
@@ -48,21 +48,21 @@ def mock_get_accounting_last_processing_ref_slot(abnormal_case):
     def _get_accounting_last_processing_ref_slot(blockstamp: ReferenceBlockStamp):
         return 10
 
-    abnormal_case.w3.lido_contracts.get_accounting_last_processing_ref_slot = Mock(
+    abnormal_case.w3.catalist_contracts.get_accounting_last_processing_ref_slot = Mock(
         side_effect=_get_accounting_last_processing_ref_slot
     )
 
 
 @pytest.fixture
-def mock_get_used_lido_keys(abnormal_case):
-    def _get_used_lido_keys(blockstamp: ReferenceBlockStamp):
+def mock_get_used_catalist_keys(abnormal_case):
+    def _get_used_catalist_keys(blockstamp: ReferenceBlockStamp):
         return [
             simple_key('0x03'),
             simple_key('0x04'),
             simple_key('0x05'),
         ]
 
-    abnormal_case.w3.kac.get_used_lido_keys = Mock(side_effect=_get_used_lido_keys)
+    abnormal_case.w3.kac.get_used_catalist_keys = Mock(side_effect=_get_used_catalist_keys)
 
 
 @pytest.fixture
@@ -149,7 +149,7 @@ def mock_get_withdrawal_vault_balance(abnormal_case, contracts):
         }
         return balance[blockstamp.block_number]
 
-    abnormal_case.w3.lido_contracts.get_withdrawal_balance_no_cache = Mock(side_effect=_get_withdrawal_vault_balance)
+    abnormal_case.w3.catalist_contracts.get_withdrawal_balance_no_cache = Mock(side_effect=_get_withdrawal_vault_balance)
 
 
 @pytest.fixture
@@ -235,7 +235,7 @@ def mock_get_validators(web3):
 
 
 @pytest.fixture
-def bunker(web3, lido_validators) -> BunkerService:
+def bunker(web3, catalist_validators) -> BunkerService:
     """Minimal initialized bunker service"""
     service = BunkerService(web3)
     return service
@@ -247,7 +247,7 @@ def blockstamp():
 
 
 @pytest.fixture
-def abnormal_case(web3, lido_validators, contracts, mock_get_validators, blockstamp) -> AbnormalClRebase:
+def abnormal_case(web3, catalist_validators, contracts, mock_get_validators, blockstamp) -> AbnormalClRebase:
     c_conf = ChainConfig(
         slots_per_epoch=1,
         seconds_per_slot=12,

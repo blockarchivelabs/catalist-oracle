@@ -6,7 +6,7 @@ from src.utils.dataclass import FromResponse
 
 
 @dataclass
-class LidoKey(FromResponse):
+class CatalistKey(FromResponse):
     key: HexStr
     depositSignature: HexStr
     operatorIndex: int

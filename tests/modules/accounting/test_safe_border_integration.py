@@ -6,7 +6,7 @@ from src.typings import ReferenceBlockStamp
 from src.services.safe_border import SafeBorder
 from tests.factory.blockstamp import ReferenceBlockStampFactory
 from tests.factory.configs import ChainConfigFactory, FrameConfigFactory, OracleReportLimitsFactory
-from tests.factory.no_registry import LidoValidatorFactory, ValidatorStateFactory
+from tests.factory.no_registry import CatalistValidatorFactory, ValidatorStateFactory
 
 from src.constants import EPOCHS_PER_SLASHINGS_VECTOR, MIN_VALIDATOR_WITHDRAWABILITY_DELAY
 
@@ -28,7 +28,7 @@ def subject(
     contracts,
     keys_api_client,
     consensus_client,
-    lido_validators,
+    catalist_validators,
     finalization_max_negative_rebase_epoch_shift,
 ):
     with patch.object(
@@ -77,9 +77,9 @@ def test_bunker_mode_associated_slashing_predicted(
     subject._get_bunker_start_or_last_successful_report_epoch = MagicMock(
         return_value=past_blockstamp.ref_epoch - finalization_max_negative_rebase_epoch_shift - 1
     )
-    subject.w3.lido_validators.get_lido_validators = MagicMock(
+    subject.w3.catalist_validators.get_catalist_validators = MagicMock(
         return_value=[
-            LidoValidatorFactory.build(
+            CatalistValidatorFactory.build(
                 validator=ValidatorStateFactory.build(
                     slashed=True, withdrawable_epoch=withdrawable_epoch, exit_epoch=exit_epoch
                 )
@@ -109,9 +109,9 @@ def test_bunker_mode_associated_slashing_unpredicted(
     subject._get_last_finalized_withdrawal_request_slot = MagicMock(
         return_value=withdrawable_epoch - EPOCHS_PER_SLASHINGS_VECTOR - 2
     )
-    subject.w3.lido_validators.get_lido_validators = MagicMock(
+    subject.w3.catalist_validators.get_catalist_validators = MagicMock(
         return_value=[
-            LidoValidatorFactory.build(
+            CatalistValidatorFactory.build(
                 validator=ValidatorStateFactory.build(
                     slashed=True,
                     withdrawable_epoch=withdrawable_epoch,

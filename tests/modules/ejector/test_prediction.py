@@ -253,9 +253,9 @@ def test_get_rewards_no_matching_events(web3, contracts):
         genesis_time=0,
     )
 
-    web3.lido_contracts.lido.events = MagicMock()
-    web3.lido_contracts.lido.events.ETHDistributed.get_logs.return_value = []
-    web3.lido_contracts.lido.events.TokenRebased.get_logs.return_value = []
+    web3.catalist_contracts.catalist.events = MagicMock()
+    web3.catalist_contracts.catalist.events.ETHDistributed.get_logs.return_value = []
+    web3.catalist_contracts.catalist.events.TokenRebased.get_logs.return_value = []
 
     p = RewardsPredictionService(web3)
 

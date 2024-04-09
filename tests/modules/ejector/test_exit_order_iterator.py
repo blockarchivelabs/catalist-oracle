@@ -1,23 +1,23 @@
 import pytest
 
 from src.providers.consensus.typings import ValidatorState
-from src.providers.keys.typings import LidoKey
+from src.providers.keys.typings import CatalistKey
 from src.services.exit_order_iterator import ExitOrderIterator
 from src.services.exit_order_iterator_state import NodeOperatorPredictableState, ExitOrderIteratorStateService
-from src.web3py.extensions.lido_validators import LidoValidator, StakingModuleId, NodeOperatorId
+from src.web3py.extensions.catalist_validators import CatalistValidator, StakingModuleId, NodeOperatorId
 from tests.factory.blockstamp import ReferenceBlockStampFactory
 from tests.factory.configs import ChainConfigFactory
-from tests.factory.no_registry import LidoValidatorFactory
+from tests.factory.no_registry import CatalistValidatorFactory
 
 
 @pytest.mark.unit
 def test_predicates():
-    def v(module_address, operator, index, activation_epoch) -> LidoValidator:
-        validator = object.__new__(LidoValidator)
-        validator.lido_id = object.__new__(LidoKey)
+    def v(module_address, operator, index, activation_epoch) -> CatalistValidator:
+        validator = object.__new__(CatalistValidator)
+        validator.catalist_id = object.__new__(CatalistKey)
         validator.validator = object.__new__(ValidatorState)
-        validator.lido_id.moduleAddress = module_address
-        validator.lido_id.operatorIndex = operator
+        validator.catalist_id.moduleAddress = module_address
+        validator.catalist_id.operatorIndex = operator
         validator.index = index
         validator.validator.activation_epoch = activation_epoch
         return validator
@@ -48,7 +48,7 @@ def test_predicates():
     }
     validators_exit.total_predictable_validators_count = 500000
 
-    validators_exit.lido_node_operator_stats = {
+    validators_exit.catalist_node_operator_stats = {
         (StakingModuleId(0), NodeOperatorId(1)): NodeOperatorPredictableState(1000, 7000, True, 10, 0),
         (StakingModuleId(0), NodeOperatorId(2)): NodeOperatorPredictableState(1000, 7000, True, 10, 0),
         (StakingModuleId(1), NodeOperatorId(1)): NodeOperatorPredictableState(1200, 6000, True, 2, 0),
@@ -73,12 +73,12 @@ def test_predicates():
 
 @pytest.mark.unit
 def test_decrease_node_operator_stats():
-    def v(module_address, operator, index, activation_epoch) -> LidoValidator:
-        validator = object.__new__(LidoValidator)
-        validator.lido_id = object.__new__(LidoKey)
+    def v(module_address, operator, index, activation_epoch) -> CatalistValidator:
+        validator = object.__new__(CatalistValidator)
+        validator.catalist_id = object.__new__(CatalistKey)
         validator.validator = object.__new__(ValidatorState)
-        validator.lido_id.moduleAddress = module_address
-        validator.lido_id.operatorIndex = operator
+        validator.catalist_id.moduleAddress = module_address
+        validator.catalist_id.operatorIndex = operator
         validator.index = index
         validator.validator.activation_epoch = activation_epoch
         return validator
@@ -99,7 +99,7 @@ def test_decrease_node_operator_stats():
         '0x4': StakingModuleId(4),
         '0x5': StakingModuleId(5),
     }
-    validator_exit.lido_node_operator_stats = {
+    validator_exit.catalist_node_operator_stats = {
         (StakingModuleId(0), NodeOperatorId(1)): NodeOperatorPredictableState(1000, 7000, True, 10, 0),
         (StakingModuleId(0), NodeOperatorId(2)): NodeOperatorPredictableState(1000, 7000, True, 10, 0),
         (StakingModuleId(1), NodeOperatorId(1)): NodeOperatorPredictableState(1200, 6000, True, 2, 0),
@@ -118,7 +118,7 @@ def test_decrease_node_operator_stats():
     assert module_operator == (StakingModuleId(1), NodeOperatorId(2))
     assert validator_exit.total_predictable_validators_count == 499999
     assert (
-        validator_exit.lido_node_operator_stats[(StakingModuleId(1), NodeOperatorId(2))]
+        validator_exit.catalist_node_operator_stats[(StakingModuleId(1), NodeOperatorId(2))]
         == expected_after_decrease_first
     )
 
@@ -127,7 +127,7 @@ def test_decrease_node_operator_stats():
     assert module_operator == (StakingModuleId(4), NodeOperatorId(2))
     assert validator_exit.total_predictable_validators_count == 499998
     assert (
-        validator_exit.lido_node_operator_stats[(StakingModuleId(4), NodeOperatorId(2))]
+        validator_exit.catalist_node_operator_stats[(StakingModuleId(4), NodeOperatorId(2))]
         == expected_after_decrease_second
     )
 
@@ -142,8 +142,8 @@ def mock_exit_order_iterator_state_service(monkeypatch):
     MockedExitOrderIteratorStateService.get_oracle_report_limits = lambda *_: inner_
     MockedExitOrderIteratorStateService.get_operator_network_penetration_threshold = lambda *_: 0.05
     MockedExitOrderIteratorStateService.get_operators_with_last_exited_validator_indexes = lambda *_: {}
-    MockedExitOrderIteratorStateService.get_exitable_lido_validators = lambda *_: []
-    MockedExitOrderIteratorStateService.prepare_lido_node_operator_stats = lambda *_: {}
+    MockedExitOrderIteratorStateService.get_exitable_catalist_validators = lambda *_: []
+    MockedExitOrderIteratorStateService.prepare_catalist_node_operator_stats = lambda *_: {}
     MockedExitOrderIteratorStateService.get_total_predictable_validators_count = lambda *_: 0
 
     monkeypatch.setattr(
@@ -152,16 +152,16 @@ def mock_exit_order_iterator_state_service(monkeypatch):
 
 
 @pytest.mark.unit
-def test_exit_order_iterator_iter(web3, lido_validators, contracts, mock_exit_order_iterator_state_service):
+def test_exit_order_iterator_iter(web3, catalist_validators, contracts, mock_exit_order_iterator_state_service):
     iterator = ExitOrderIterator(web3, ReferenceBlockStampFactory.build(), ChainConfigFactory.build())
-    web3.lido_validators.get_lido_node_operators = lambda _: []
-    web3.lido_validators.get_lido_validators_by_node_operators = lambda _: []
+    web3.catalist_validators.get_catalist_node_operators = lambda _: []
+    web3.catalist_validators.get_catalist_validators_by_node_operators = lambda _: []
 
     iterator.__iter__()
 
-    assert iterator.exitable_lido_validators == []
+    assert iterator.exitable_catalist_validators == []
     assert iterator.left_queue_count == 0
-    assert iterator.lido_node_operator_stats == {}
+    assert iterator.catalist_node_operator_stats == {}
     assert iterator.max_validators_to_exit == 100
     assert iterator.operator_network_penetration_threshold == 0.05
     assert iterator.staking_module_id == {}
@@ -169,10 +169,10 @@ def test_exit_order_iterator_iter(web3, lido_validators, contracts, mock_exit_or
 
 
 @pytest.mark.unit
-def test_exit_order_iterator_next(web3, lido_validators, contracts, mock_exit_order_iterator_state_service):
+def test_exit_order_iterator_next(web3, catalist_validators, contracts, mock_exit_order_iterator_state_service):
     iterator = ExitOrderIterator(web3, ReferenceBlockStampFactory.build(), ChainConfigFactory.build())
-    web3.lido_validators.get_lido_node_operators = lambda _: []
-    web3.lido_validators.get_lido_validators_by_node_operators = lambda _: []
+    web3.catalist_validators.get_catalist_node_operators = lambda _: []
+    web3.catalist_validators.get_catalist_validators_by_node_operators = lambda _: []
 
     iterator.__iter__()
 
@@ -188,10 +188,10 @@ def test_exit_order_iterator_next(web3, lido_validators, contracts, mock_exit_or
         # no exitable validators
         iterator.__next__()
 
-    validator = LidoValidatorFactory.build(index=0)
+    validator = CatalistValidatorFactory.build(index=0)
     validator.validator.activation_epoch = 0
-    iterator.exitable_lido_validators = [validator]
-    iterator.lido_node_operator_stats = {
+    iterator.exitable_catalist_validators = [validator]
+    iterator.catalist_node_operator_stats = {
         (0, 1): NodeOperatorPredictableState(1000, 7000, True, 10, 0),
     }
     iterator.total_predictable_validators_count = 100
@@ -200,7 +200,7 @@ def test_exit_order_iterator_next(web3, lido_validators, contracts, mock_exit_or
     popped = iterator.__next__()
 
     assert popped == ((0, 1), validator)
-    assert iterator.lido_node_operator_stats[(0, 1)] == NodeOperatorPredictableState(
+    assert iterator.catalist_node_operator_stats[(0, 1)] == NodeOperatorPredictableState(
         predictable_validators_total_age=-8195,
         predictable_validators_count=6999,
         targeted_validators_limit_is_enabled=True,

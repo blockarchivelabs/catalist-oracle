@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from unittest.mock import Mock
 from src.services.safe_border import SafeBorder
-from src.web3py.extensions.lido_validators import Validator
+from src.web3py.extensions.catalist_validators import Validator
 from src.providers.consensus.typings import ValidatorState
 from src.modules.submodules.consensus import ChainConfig, FrameConfig
 from tests.factory.blockstamp import ReferenceBlockStampFactory
@@ -37,7 +37,7 @@ def past_blockstamp():
 
 @pytest.fixture()
 def subject(
-    chain_config, frame_config, past_blockstamp, web3, contracts, keys_api_client, consensus_client, lido_validators
+    chain_config, frame_config, past_blockstamp, web3, contracts, keys_api_client, consensus_client, catalist_validators
 ):
     return SafeBorder(web3, past_blockstamp, chain_config, frame_config)
 
@@ -111,13 +111,13 @@ def test_get_associated_slashings_border_epoch(subject, past_blockstamp):
 
 
 def test_get_earliest_slashed_epoch_among_incomplete_slashings_no_validators(subject, past_blockstamp):
-    subject.w3.lido_validators.get_lido_validators = Mock(return_value=[])
+    subject.w3.catalist_validators.get_catalist_validators = Mock(return_value=[])
 
     assert subject._get_earliest_slashed_epoch_among_incomplete_slashings() is None
 
 
 def test_get_earliest_slashed_epoch_among_incomplete_slashings_no_slashed_validators(subject, past_blockstamp):
-    subject.w3.lido_validators.get_lido_validators = Mock(
+    subject.w3.catalist_validators.get_catalist_validators = Mock(
         return_value=[
             create_validator_stub(100, 105),
             create_validator_stub(102, 107),
@@ -129,17 +129,17 @@ def test_get_earliest_slashed_epoch_among_incomplete_slashings_no_slashed_valida
 
 
 def test_get_earliest_slashed_epoch_among_incomplete_slashings_withdrawable_validators(
-    subject, past_blockstamp, lido_validators
+    subject, past_blockstamp, catalist_validators
 ):
     withdrawable_epoch = past_blockstamp.ref_epoch - 10
     validators = [create_validator_stub(100, withdrawable_epoch, True)]
-    subject.w3.lido_validators.get_lido_validators = Mock(return_value=validators)
+    subject.w3.catalist_validators.get_catalist_validators = Mock(return_value=validators)
 
     assert subject._get_earliest_slashed_epoch_among_incomplete_slashings() is None
 
 
 def test_get_earliest_slashed_epoch_among_incomplete_slashings_unable_to_predict(
-    subject, past_blockstamp, lido_validators
+    subject, past_blockstamp, catalist_validators
 ):
     non_withdrawable_epoch = past_blockstamp.ref_epoch + 10
     validators = [
@@ -147,14 +147,14 @@ def test_get_earliest_slashed_epoch_among_incomplete_slashings_unable_to_predict
             non_withdrawable_epoch - MIN_VALIDATOR_WITHDRAWABILITY_DELAY, non_withdrawable_epoch, True
         )
     ]
-    subject.w3.lido_validators.get_lido_validators = Mock(return_value=validators)
+    subject.w3.catalist_validators.get_catalist_validators = Mock(return_value=validators)
     subject._find_earliest_slashed_epoch_rounded_to_frame = Mock(return_value=1331)
 
     assert subject._get_earliest_slashed_epoch_among_incomplete_slashings() == 1331
 
 
 def test_get_earliest_slashed_epoch_among_incomplete_slashings_all_withdrawable(
-    subject, past_blockstamp, lido_validators
+    subject, past_blockstamp, catalist_validators
 ):
     validators = [
         create_validator_stub(
@@ -164,12 +164,12 @@ def test_get_earliest_slashed_epoch_among_incomplete_slashings_all_withdrawable(
             past_blockstamp.ref_epoch - MIN_VALIDATOR_WITHDRAWABILITY_DELAY, past_blockstamp.ref_epoch - 2, True
         ),
     ]
-    subject.w3.lido_validators.get_lido_validators = Mock(return_value=validators)
+    subject.w3.catalist_validators.get_catalist_validators = Mock(return_value=validators)
 
     assert subject._get_earliest_slashed_epoch_among_incomplete_slashings() is None
 
 
-def test_get_earliest_slashed_epoch_among_incomplete_slashings_predicted(subject, past_blockstamp, lido_validators):
+def test_get_earliest_slashed_epoch_among_incomplete_slashings_predicted(subject, past_blockstamp, catalist_validators):
     non_withdrawable_epoch = past_blockstamp.ref_epoch + 10
     validators = [
         create_validator_stub(
@@ -179,7 +179,7 @@ def test_get_earliest_slashed_epoch_among_incomplete_slashings_predicted(subject
             non_withdrawable_epoch - MIN_VALIDATOR_WITHDRAWABILITY_DELAY - 2, non_withdrawable_epoch, True
         ),
     ]
-    subject.w3.lido_validators.get_lido_validators = Mock(return_value=validators)
+    subject.w3.catalist_validators.get_catalist_validators = Mock(return_value=validators)
 
     assert subject._get_earliest_slashed_epoch_among_incomplete_slashings() == (
         non_withdrawable_epoch - EPOCHS_PER_SLASHINGS_VECTOR
@@ -189,7 +189,7 @@ def test_get_earliest_slashed_epoch_among_incomplete_slashings_predicted(subject
 def test_get_earliest_slashed_epoch_among_incomplete_slashings_at_least_one_unpredictable_epoch(
     subject,
     past_blockstamp,
-    lido_validators,
+    catalist_validators,
 ):
     non_withdrawable_epoch = past_blockstamp.ref_epoch + 10
     validators = [
@@ -200,7 +200,7 @@ def test_get_earliest_slashed_epoch_among_incomplete_slashings_at_least_one_unpr
             non_withdrawable_epoch - MIN_VALIDATOR_WITHDRAWABILITY_DELAY, non_withdrawable_epoch, True
         ),
     ]
-    subject.w3.lido_validators.get_lido_validators = Mock(return_value=validators)
+    subject.w3.catalist_validators.get_catalist_validators = Mock(return_value=validators)
     subject._find_earliest_slashed_epoch_rounded_to_frame = Mock(return_value=1331)
 
     assert subject._get_earliest_slashed_epoch_among_incomplete_slashings() == 1331
@@ -208,7 +208,7 @@ def test_get_earliest_slashed_epoch_among_incomplete_slashings_at_least_one_unpr
 
 def test_get_bunker_start_or_last_successful_report_epoch_no_bunker_start(subject, past_blockstamp):
     subject._get_bunker_mode_start_timestamp = Mock(return_value=None)
-    subject.w3.lido_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=past_blockstamp.ref_slot)
+    subject.w3.catalist_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=past_blockstamp.ref_slot)
 
     assert subject._get_bunker_start_or_last_successful_report_epoch() == past_blockstamp.ref_slot // 32
 

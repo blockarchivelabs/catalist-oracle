@@ -10,12 +10,12 @@ from src.modules.ejector.ejector import logger as ejector_logger
 from src.modules.submodules.oracle_module import ModuleExecuteDelay
 from src.modules.submodules.typings import ChainConfig
 from src.typings import BlockStamp, ReferenceBlockStamp
-from src.web3py.extensions.contracts import LidoContracts
-from src.web3py.extensions.lido_validators import NodeOperatorId, StakingModuleId
+from src.web3py.extensions.contracts import CatalistContracts
+from src.web3py.extensions.catalist_validators import NodeOperatorId, StakingModuleId
 from src.web3py.typings import Web3
 from tests.factory.blockstamp import BlockStampFactory, ReferenceBlockStampFactory
 from tests.factory.configs import ChainConfigFactory
-from tests.factory.no_registry import LidoValidatorFactory
+from tests.factory.no_registry import CatalistValidatorFactory
 from tests.modules.accounting.test_safe_border_unit import FAR_FUTURE_EPOCH
 
 
@@ -40,7 +40,7 @@ def ref_blockstamp() -> ReferenceBlockStamp:
 
 
 @pytest.fixture()
-def ejector(web3: Web3, contracts: LidoContracts) -> Ejector:
+def ejector(web3: Web3, contracts: CatalistContracts) -> Ejector:
     return Ejector(web3)
 
 
@@ -136,14 +136,14 @@ class TestGetValidatorsToEject:
         ejector._get_total_el_balance = Mock(return_value=100)
         ejector.validators_state_service.get_recently_requested_but_not_exited_validators = Mock(return_value=[])
 
-        ejector._get_withdrawable_lido_validators_balance = Mock(return_value=0)
+        ejector._get_withdrawable_catalist_validators_balance = Mock(return_value=0)
         ejector._get_predicted_withdrawable_epoch = Mock(return_value=50)
         ejector._get_predicted_withdrawable_balance = Mock(return_value=50)
 
         validators = [
-            ((StakingModuleId(0), NodeOperatorId(1)), LidoValidatorFactory.build()),
-            ((StakingModuleId(0), NodeOperatorId(3)), LidoValidatorFactory.build()),
-            ((StakingModuleId(0), NodeOperatorId(5)), LidoValidatorFactory.build()),
+            ((StakingModuleId(0), NodeOperatorId(1)), CatalistValidatorFactory.build()),
+            ((StakingModuleId(0), NodeOperatorId(3)), CatalistValidatorFactory.build()),
+            ((StakingModuleId(0), NodeOperatorId(5)), CatalistValidatorFactory.build()),
         ]
 
         with monkeypatch.context() as m:
@@ -202,18 +202,18 @@ def test_get_predicted_withdrawable_epoch(ejector: Ejector) -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.usefixtures("consensus_client", "lido_validators")
-def test_get_withdrawable_lido_validators(
+@pytest.mark.usefixtures("consensus_client", "catalist_validators")
+def test_get_withdrawable_catalist_validators(
     ejector: Ejector,
     ref_blockstamp: ReferenceBlockStamp,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    ejector.w3.lido_validators.get_lido_validators = Mock(
+    ejector.w3.catalist_validators.get_catalist_validators = Mock(
         return_value=[
-            LidoValidatorFactory.build(balance="0"),
-            LidoValidatorFactory.build(balance="0"),
-            LidoValidatorFactory.build(balance="31"),
-            LidoValidatorFactory.build(balance="42"),
+            CatalistValidatorFactory.build(balance="0"),
+            CatalistValidatorFactory.build(balance="0"),
+            CatalistValidatorFactory.build(balance="31"),
+            CatalistValidatorFactory.build(balance="42"),
         ]
     )
 
@@ -224,24 +224,24 @@ def test_get_withdrawable_lido_validators(
             Mock(side_effect=lambda v, _: int(v.balance) > 32),
         )
 
-        result = ejector._get_withdrawable_lido_validators_balance(ref_blockstamp, 42)
+        result = ejector._get_withdrawable_catalist_validators_balance(ref_blockstamp, 42)
         assert result == 42 * 10**9, "Unexpected withdrawable amount"
 
-        ejector._get_withdrawable_lido_validators_balance(ref_blockstamp, 42)
-        ejector.w3.lido_validators.get_lido_validators.assert_called_once()
+        ejector._get_withdrawable_catalist_validators_balance(ref_blockstamp, 42)
+        ejector.w3.catalist_validators.get_catalist_validators.assert_called_once()
 
 
 @pytest.mark.unit
 def test_get_predicted_withdrawable_balance(ejector: Ejector) -> None:
-    validator = LidoValidatorFactory.build(balance="0")
+    validator = CatalistValidatorFactory.build(balance="0")
     result = ejector._get_predicted_withdrawable_balance(validator)
     assert result == 0, "Expected zero"
 
-    validator = LidoValidatorFactory.build(balance="42")
+    validator = CatalistValidatorFactory.build(balance="42")
     result = ejector._get_predicted_withdrawable_balance(validator)
     assert result == 42 * 10**9, "Expected validator's balance in gwei"
 
-    validator = LidoValidatorFactory.build(balance=str(MAX_EFFECTIVE_BALANCE + 1))
+    validator = CatalistValidatorFactory.build(balance=str(MAX_EFFECTIVE_BALANCE + 1))
     result = ejector._get_predicted_withdrawable_balance(validator)
     assert result == MAX_EFFECTIVE_BALANCE * 10**9, "Expect MAX_EFFECTIVE_BALANCE"
 
@@ -254,7 +254,7 @@ def test_get_sweep_delay_in_epochs(
     chain_config: ChainConfig,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    ejector.w3.cc.get_validators = Mock(return_value=LidoValidatorFactory.batch(1024))
+    ejector.w3.cc.get_validators = Mock(return_value=CatalistValidatorFactory.batch(1024))
     ejector.get_chain_config = Mock(return_value=chain_config)
 
     with monkeypatch.context() as m:
@@ -299,15 +299,15 @@ def test_get_reserved_buffer(ejector: Ejector, blockstamp: BlockStamp) -> None:
 
 @pytest.mark.usefixtures("contracts")
 def test_get_total_balance(ejector: Ejector, blockstamp: BlockStamp) -> None:
-    ejector.w3.lido_contracts.get_withdrawal_balance = Mock(return_value=3)
-    ejector.w3.lido_contracts.get_el_vault_balance = Mock(return_value=17)
+    ejector.w3.catalist_contracts.get_withdrawal_balance = Mock(return_value=3)
+    ejector.w3.catalist_contracts.get_el_vault_balance = Mock(return_value=17)
     ejector._get_buffer_ether = Mock(return_value=1)
 
     result = ejector._get_total_el_balance(blockstamp)
     assert result == 21, "Unexpected total balance"
 
-    ejector.w3.lido_contracts.get_withdrawal_balance.assert_called_once_with(blockstamp)
-    ejector.w3.lido_contracts.get_el_vault_balance.assert_called_once_with(blockstamp)
+    ejector.w3.catalist_contracts.get_withdrawal_balance.assert_called_once_with(blockstamp)
+    ejector.w3.catalist_contracts.get_el_vault_balance.assert_called_once_with(blockstamp)
     ejector._get_buffer_ether.assert_called_once_with(blockstamp)
 
 

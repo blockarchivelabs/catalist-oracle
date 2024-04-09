@@ -1,6 +1,8 @@
+from dotenv import load_dotenv
 import os
 
 from eth_account import Account
+load_dotenv()
 
 # - Providers-
 EXECUTION_CLIENT_URI = os.getenv('EXECUTION_CLIENT_URI', '').split(',')
@@ -24,7 +26,7 @@ if MEMBER_PRIV_KEY:
     ACCOUNT = Account.from_key(MEMBER_PRIV_KEY)  # False-positive. pylint: disable=no-value-for-parameter
 
 # - App specific -
-LIDO_LOCATOR_ADDRESS = os.getenv('LIDO_LOCATOR_ADDRESS')
+CATALIST_LOCATOR_ADDRESS = os.getenv('CATALIST_LOCATOR_ADDRESS')
 FINALIZATION_BATCH_MAX_REQUEST_COUNT = int(os.getenv('FINALIZATION_BATCH_MAX_REQUEST_COUNT', 1000))
 
 # We add some gas to the transaction to be sure that we have enough gas to execute corner cases
@@ -67,7 +69,7 @@ HTTP_REQUEST_SLEEP_BEFORE_RETRY_IN_SECONDS_KEYS_API = int(
 
 # - Metrics -
 PROMETHEUS_PORT = int(os.getenv('PROMETHEUS_PORT', 9000))
-PROMETHEUS_PREFIX = os.getenv("PROMETHEUS_PREFIX", "lido_oracle")
+PROMETHEUS_PREFIX = os.getenv("PROMETHEUS_PREFIX", "catalist_oracle")
 
 HEALTHCHECK_SERVER_PORT = int(os.getenv('HEALTHCHECK_SERVER_PORT', 9010))
 
@@ -76,8 +78,8 @@ MAX_CYCLE_LIFETIME_IN_SECONDS = int(os.getenv("MAX_CYCLE_LIFETIME_IN_SECONDS", 3
 
 def check_all_required_variables():
     errors = check_uri_required_variables()
-    if LIDO_LOCATOR_ADDRESS in (None, ''):
-        errors.append('LIDO_LOCATOR_ADDRESS')
+    if CATALIST_LOCATOR_ADDRESS in (None, ''):
+        errors.append('CATALIST_LOCATOR_ADDRESS')
     return errors
 
 

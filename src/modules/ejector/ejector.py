@@ -26,7 +26,7 @@ from src.modules.submodules.oracle_module import BaseModule, ModuleExecuteDelay
 from src.providers.consensus.typings import Validator
 from src.services.exit_order_iterator import ExitOrderIterator
 from src.services.prediction import RewardsPredictionService
-from src.services.validator_state import LidoValidatorStateService
+from src.services.validator_state import CatalistValidatorStateService
 from src.typings import BlockStamp, EpochNumber, ReferenceBlockStamp
 from src.utils.abi import named_tuple_to_dataclass
 from src.utils.cache import global_lru_cache as lru_cache
@@ -35,7 +35,7 @@ from src.utils.validator_state import (
     is_fully_withdrawable_validator,
     is_partially_withdrawable_validator,
 )
-from src.web3py.extensions.lido_validators import LidoValidator, NodeOperatorGlobalIndex
+from src.web3py.extensions.catalist_validators import CatalistValidator, NodeOperatorGlobalIndex
 from src.web3py.typings import Web3
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 class Ejector(BaseModule, ConsensusModule):
     """
-    Module that ejects lido validators depends on total value of unfinalized withdrawal requests.
+    Module that ejects catalist validators depends on total value of unfinalized withdrawal requests.
 
     Flow:
     1. Calculate withdrawals amount to cover with ETH.
@@ -56,7 +56,7 @@ class Ejector(BaseModule, ConsensusModule):
         4. Add new validator to "to eject" list.
         5. Recalculate withdrawn epoch.
 
-    3. Decode lido validators into bytes and send report transaction
+    3. Decode catalist validators into bytes and send report transaction
     """
     CONSENSUS_VERSION = 1
     CONTRACT_VERSION = 1
@@ -64,14 +64,14 @@ class Ejector(BaseModule, ConsensusModule):
     AVG_EXPECTING_WITHDRAWALS_SWEEP_DURATION_MULTIPLIER = 0.5
 
     def __init__(self, w3: Web3):
-        self.report_contract = w3.lido_contracts.validators_exit_bus_oracle
+        self.report_contract = w3.catalist_contracts.validators_exit_bus_oracle
         super().__init__(w3)
 
         self.prediction_service = RewardsPredictionService(w3)
-        self.validators_state_service = LidoValidatorStateService(w3)
+        self.validators_state_service = CatalistValidatorStateService(w3)
 
     def refresh_contracts(self):
-        self.report_contract = self.w3.lido_contracts.validators_exit_bus_oracle
+        self.report_contract = self.w3.catalist_contracts.validators_exit_bus_oracle
 
     def execute_module(self, last_finalized_blockstamp: BlockStamp) -> ModuleExecuteDelay:
         report_blockstamp = self.get_blockstamp_for_report(last_finalized_blockstamp)
@@ -85,9 +85,9 @@ class Ejector(BaseModule, ConsensusModule):
     @lru_cache(maxsize=1)
     @duration_meter()
     def build_report(self, blockstamp: ReferenceBlockStamp) -> tuple:
-        last_report_ref_slot = self.w3.lido_contracts.get_ejector_last_processing_ref_slot(blockstamp)
+        last_report_ref_slot = self.w3.catalist_contracts.get_ejector_last_processing_ref_slot(blockstamp)
         FRAME_PREV_REPORT_REF_SLOT.set(last_report_ref_slot)
-        validators: list[tuple[NodeOperatorGlobalIndex, LidoValidator]] = self.get_validators_to_eject(blockstamp)
+        validators: list[tuple[NodeOperatorGlobalIndex, CatalistValidator]] = self.get_validators_to_eject(blockstamp)
         logger.info({
             'msg': f'Calculate validators to eject. Count: {len(validators)}',
             'value': [val[1].index for val in validators]},
@@ -107,7 +107,7 @@ class Ejector(BaseModule, ConsensusModule):
 
         return report_data.as_tuple()
 
-    def get_validators_to_eject(self, blockstamp: ReferenceBlockStamp) -> list[tuple[NodeOperatorGlobalIndex, LidoValidator]]:
+    def get_validators_to_eject(self, blockstamp: ReferenceBlockStamp) -> list[tuple[NodeOperatorGlobalIndex, CatalistValidator]]:
         to_withdraw_amount = self.get_total_unfinalized_withdrawal_requests_amount(blockstamp)
         logger.info({'msg': 'Calculate to withdraw amount.', 'value': to_withdraw_amount})
 
@@ -134,7 +134,7 @@ class Ejector(BaseModule, ConsensusModule):
         ))
         logger.info({'msg': 'Calculate going to exit validators balance.', 'value': going_to_withdraw_balance})
 
-        validators_to_eject: list[tuple[NodeOperatorGlobalIndex, LidoValidator]] = []
+        validators_to_eject: list[tuple[NodeOperatorGlobalIndex, CatalistValidator]] = []
         validator_to_eject_balance_sum = 0
 
         validators_iterator = ExitOrderIterator(
@@ -147,7 +147,7 @@ class Ejector(BaseModule, ConsensusModule):
             withdrawal_epoch = self._get_predicted_withdrawable_epoch(blockstamp, len(validators_to_eject) + len(validators_going_to_exit) + 1)
             future_rewards = (withdrawal_epoch + epochs_to_sweep - blockstamp.ref_epoch) * rewards_speed_per_epoch
 
-            future_withdrawals = self._get_withdrawable_lido_validators_balance(blockstamp, withdrawal_epoch)
+            future_withdrawals = self._get_withdrawable_catalist_validators_balance(blockstamp, withdrawal_epoch)
 
             expected_balance = (
                 future_withdrawals +  # Validators that have withdrawal_epoch
@@ -192,8 +192,8 @@ class Ejector(BaseModule, ConsensusModule):
         return not on_pause
 
     @lru_cache(maxsize=1)
-    def _get_withdrawable_lido_validators_balance(self, blockstamp: BlockStamp, on_epoch: EpochNumber) -> Wei:
-        lido_validators = self.w3.lido_validators.get_lido_validators(blockstamp=blockstamp)
+    def _get_withdrawable_catalist_validators_balance(self, blockstamp: BlockStamp, on_epoch: EpochNumber) -> Wei:
+        catalist_validators = self.w3.catalist_validators.get_catalist_validators(blockstamp=blockstamp)
 
         def get_total_withdrawable_balance(balance: Wei, validator: Validator) -> Wei:
             if is_fully_withdrawable_validator(validator, on_epoch):
@@ -205,7 +205,7 @@ class Ejector(BaseModule, ConsensusModule):
 
         result = reduce(
             get_total_withdrawable_balance,
-            lido_validators,
+            catalist_validators,
             Wei(0),
         )
 
@@ -216,8 +216,8 @@ class Ejector(BaseModule, ConsensusModule):
 
     def _get_total_el_balance(self, blockstamp: BlockStamp) -> Wei:
         total_el_balance = Wei(
-            self.w3.lido_contracts.get_el_vault_balance(blockstamp) +
-            self.w3.lido_contracts.get_withdrawal_balance(blockstamp) +
+            self.w3.catalist_contracts.get_el_vault_balance(blockstamp) +
+            self.w3.catalist_contracts.get_withdrawal_balance(blockstamp) +
             self._get_buffer_ether(blockstamp)
         )
         return total_el_balance
@@ -230,13 +230,13 @@ class Ejector(BaseModule, ConsensusModule):
         We won't eject validators at all, because we have enough eth to fulfill all requests.
         """
         return Wei(
-            self.w3.lido_contracts.lido.functions.getBufferedEther().call(
+            self.w3.catalist_contracts.catalist.functions.getBufferedEther().call(
                 block_identifier=blockstamp.block_hash
             )
         )
 
     def get_total_unfinalized_withdrawal_requests_amount(self, blockstamp: BlockStamp) -> Wei:
-        unfinalized_steth = self.w3.lido_contracts.withdrawal_queue_nft.functions.unfinalizedStETH().call(
+        unfinalized_steth = self.w3.catalist_contracts.withdrawal_queue_nft.functions.unfinalizedStETH().call(
             block_identifier=blockstamp.block_hash,
         )
         return unfinalized_steth

@@ -12,12 +12,12 @@ from src.modules.ejector.data_encode import (
     encode_data,
     sort_validators_to_eject,
 )
-from src.web3py.extensions.lido_validators import (
-    LidoValidator,
+from src.web3py.extensions.catalist_validators import (
+    CatalistValidator,
     NodeOperatorId,
     StakingModuleId,
 )
-from tests.factory.no_registry import LidoValidatorFactory
+from tests.factory.no_registry import CatalistValidatorFactory
 
 
 RECORD_LENGTH = sum(
@@ -43,7 +43,7 @@ def pubkey_factory() -> Callable:
 @pytest.fixture()
 def validator_factory(pubkey_factory: Callable[[], str]) -> Callable:
     def _factory(index: int, pubkey: str | None = None):
-        v = LidoValidatorFactory.build(index=str(index))
+        v = CatalistValidatorFactory.build(index=str(index))
         v.validator.pubkey = pubkey or pubkey_factory()
         return v
 
@@ -51,7 +51,7 @@ def validator_factory(pubkey_factory: Callable[[], str]) -> Callable:
 
 
 @pytest.mark.unit
-def test_encode_data(validator_factory: Callable[..., LidoValidator]) -> None:
+def test_encode_data(validator_factory: Callable[..., CatalistValidator]) -> None:
     data = [
         ((StakingModuleId(0), NodeOperatorId(0)), validator_factory(2)),
         ((StakingModuleId(8), NodeOperatorId(17)), validator_factory(1)),
@@ -99,7 +99,7 @@ def test_encode_data_empty() -> None:
 
 
 @pytest.mark.unit
-def test_encode_data_overflow(validator_factory: Callable[..., LidoValidator]) -> None:
+def test_encode_data_overflow(validator_factory: Callable[..., CatalistValidator]) -> None:
     with pytest.raises(OverflowError):
         encode_data(
             [
@@ -180,7 +180,7 @@ def test_encode_data_overflow(validator_factory: Callable[..., LidoValidator]) -
 
 
 @pytest.mark.unit
-def test_encode_broken_pubkey(validator_factory: Callable[..., LidoValidator]) -> None:
+def test_encode_broken_pubkey(validator_factory: Callable[..., CatalistValidator]) -> None:
     with pytest.raises(ValueError, match="Unexpected size of validator pub key"):
         encode_data(
             [
@@ -241,21 +241,21 @@ def _slice_bytes(data: bytes, *segs: int) -> Iterable[bytes]:
 @pytest.mark.parametrize(
     "validators_to_eject",
     [
-        [*zip([(0, 1)] * 10, LidoValidatorFactory.batch(10))],
+        [*zip([(0, 1)] * 10, CatalistValidatorFactory.batch(10))],
         [
-            [(1, 0), LidoValidatorFactory.build(index=13)],
-            [(0, 1), LidoValidatorFactory.build(index=12)],
-            [(1, 0), LidoValidatorFactory.build(index=11)],
-            [(1, 0), LidoValidatorFactory.build(index=10)],
-            [(1, 0), LidoValidatorFactory.build(index=1)],
-            [(1, 0), LidoValidatorFactory.build(index=2)],
-            [(0, 1), LidoValidatorFactory.build(index=3)],
-            [(1, 0), LidoValidatorFactory.build(index=4)],
-            [(1, 0), LidoValidatorFactory.build(index=5)],
-            [(2, 1), LidoValidatorFactory.build(index=6)],
-            [(2, 0), LidoValidatorFactory.build(index=7)],
-            [(0, 0), LidoValidatorFactory.build(index=8)],
-            [(0, 1), LidoValidatorFactory.build(index=9)],
+            [(1, 0), CatalistValidatorFactory.build(index=13)],
+            [(0, 1), CatalistValidatorFactory.build(index=12)],
+            [(1, 0), CatalistValidatorFactory.build(index=11)],
+            [(1, 0), CatalistValidatorFactory.build(index=10)],
+            [(1, 0), CatalistValidatorFactory.build(index=1)],
+            [(1, 0), CatalistValidatorFactory.build(index=2)],
+            [(0, 1), CatalistValidatorFactory.build(index=3)],
+            [(1, 0), CatalistValidatorFactory.build(index=4)],
+            [(1, 0), CatalistValidatorFactory.build(index=5)],
+            [(2, 1), CatalistValidatorFactory.build(index=6)],
+            [(2, 0), CatalistValidatorFactory.build(index=7)],
+            [(0, 0), CatalistValidatorFactory.build(index=8)],
+            [(0, 1), CatalistValidatorFactory.build(index=9)],
         ],
     ],
 )

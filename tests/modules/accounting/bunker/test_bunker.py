@@ -3,14 +3,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.modules.accounting.typings import LidoReportRebase
+from src.modules.accounting.typings import CatalistReportRebase
 from src.services.bunker import BunkerService
 from src.typings import ReferenceBlockStamp
-from src.web3py.extensions.lido_validators import LidoValidator
+from src.web3py.extensions.catalist_validators import CatalistValidator
 from tests.factory.blockstamp import ReferenceBlockStampFactory
 from tests.factory.configs import BunkerConfigFactory, ChainConfigFactory, FrameConfigFactory
-from tests.factory.contract_responses import LidoReportRebaseFactory
-from tests.factory.no_registry import LidoValidatorFactory
+from tests.factory.contract_responses import CatalistReportRebaseFactory
+from tests.factory.no_registry import CatalistValidatorFactory
 from tests.modules.accounting.bunker.conftest import simple_ref_blockstamp
 
 
@@ -26,16 +26,16 @@ class TestIsBunkerMode:
         bunker: BunkerService,
         ref_blockstamp: ReferenceBlockStamp,
     ) -> None:
-        bunker.w3.lido_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=None)
+        bunker.w3.catalist_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=None)
         bunker.get_cl_rebase_for_current_report = Mock()
         result = bunker.is_bunker_mode(
             ref_blockstamp,
             FrameConfigFactory.build(),
             ChainConfigFactory.build(),
-            LidoReportRebaseFactory.build(),
+            CatalistReportRebaseFactory.build(),
         )
         assert result is False
-        bunker.w3.lido_contracts.get_accounting_last_processing_ref_slot.assert_called_once()
+        bunker.w3.catalist_contracts.get_accounting_last_processing_ref_slot.assert_called_once()
         bunker.get_cl_rebase_for_current_report.assert_not_called()
 
     @pytest.mark.unit
@@ -50,18 +50,18 @@ class TestIsBunkerMode:
         ref_blockstamp: ReferenceBlockStamp,
         is_high_midterm_slashing_penalty: Mock,
     ) -> None:
-        bunker.w3.lido_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=ref_blockstamp)
+        bunker.w3.catalist_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=ref_blockstamp)
         bunker.get_cl_rebase_for_current_report = Mock(return_value=-1)
 
         result = bunker.is_bunker_mode(
             ref_blockstamp,
             FrameConfigFactory.build(),
             ChainConfigFactory.build(),
-            LidoReportRebaseFactory.build(),
+            CatalistReportRebaseFactory.build(),
         )
         assert result is True
 
-        bunker.w3.lido_contracts.get_accounting_last_processing_ref_slot.assert_called_once()
+        bunker.w3.catalist_contracts.get_accounting_last_processing_ref_slot.assert_called_once()
         bunker.get_cl_rebase_for_current_report.assert_called_once()
         is_high_midterm_slashing_penalty.assert_not_called()
 
@@ -78,14 +78,14 @@ class TestIsBunkerMode:
         is_high_midterm_slashing_penalty: Mock,
         is_abnormal_cl_rebase: Mock,
     ) -> None:
-        bunker.w3.lido_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=ref_blockstamp)
+        bunker.w3.catalist_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=ref_blockstamp)
         bunker.get_cl_rebase_for_current_report = Mock(return_value=0)
         is_high_midterm_slashing_penalty.return_value = True
         result = bunker.is_bunker_mode(
             ref_blockstamp,
             FrameConfigFactory.build(),
             ChainConfigFactory.build(),
-            LidoReportRebaseFactory.build(),
+            CatalistReportRebaseFactory.build(),
         )
         assert result is True
         is_high_midterm_slashing_penalty.assert_called_once()
@@ -104,7 +104,7 @@ class TestIsBunkerMode:
         is_high_midterm_slashing_penalty: Mock,
         is_abnormal_cl_rebase: Mock,
     ) -> None:
-        bunker.w3.lido_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=ref_blockstamp)
+        bunker.w3.catalist_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=ref_blockstamp)
         bunker.get_cl_rebase_for_current_report = Mock(return_value=0)
         is_high_midterm_slashing_penalty.return_value = False
         is_abnormal_cl_rebase.return_value = True
@@ -112,7 +112,7 @@ class TestIsBunkerMode:
             ref_blockstamp,
             FrameConfigFactory.build(),
             ChainConfigFactory.build(),
-            LidoReportRebaseFactory.build(),
+            CatalistReportRebaseFactory.build(),
         )
         assert result is True
         is_high_midterm_slashing_penalty.assert_called_once()
@@ -132,7 +132,7 @@ class TestIsBunkerMode:
         is_high_midterm_slashing_penalty: Mock,
         is_abnormal_cl_rebase: Mock,
     ) -> None:
-        bunker.w3.lido_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=ref_blockstamp)
+        bunker.w3.catalist_contracts.get_accounting_last_processing_ref_slot = Mock(return_value=ref_blockstamp)
         bunker.get_cl_rebase_for_current_report = Mock(return_value=0)
         is_high_midterm_slashing_penalty.return_value = False
         is_abnormal_cl_rebase.return_value = False
@@ -140,7 +140,7 @@ class TestIsBunkerMode:
             ref_blockstamp,
             FrameConfigFactory.build(),
             ChainConfigFactory.build(),
-            LidoReportRebaseFactory.build(),
+            CatalistReportRebaseFactory.build(),
         )
         assert result is False
         is_high_midterm_slashing_penalty.assert_called_once()
@@ -157,10 +157,10 @@ class TestIsBunkerMode:
         bunker._get_config = Mock(return_value=BunkerConfigFactory.build())
 
     @pytest.fixture
-    def mock_validators(self, bunker: BunkerService) -> Sequence[LidoValidator]:
-        validators = LidoValidatorFactory.batch(5)
+    def mock_validators(self, bunker: BunkerService) -> Sequence[CatalistValidator]:
+        validators = CatalistValidatorFactory.batch(5)
         bunker.w3.cc.get_validators = Mock(return_value=validators)
-        bunker.w3.lido_validators.get_lido_validators = Mock(return_value=validators[:2])
+        bunker.w3.catalist_validators.get_catalist_validators = Mock(return_value=validators[:2])
         return validators
 
     @pytest.fixture
@@ -204,7 +204,7 @@ def test_get_cl_rebase_for_frame(
     expected_rebase,
 ):
     blockstamp = simple_ref_blockstamp(0)
-    simulated_cl_rebase = LidoReportRebase(
+    simulated_cl_rebase = CatalistReportRebase(
         post_total_pooled_ether=simulated_post_total_pooled_ether,
         post_total_shares=0,
         withdrawals=0,

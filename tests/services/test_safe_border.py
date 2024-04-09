@@ -26,7 +26,7 @@ def test_get_safe_border_epoch(
     SafeBorder._get_default_requests_border_epoch = MagicMock(return_value=default_requests_border_epoch)
 
     web3Mock = MagicMock
-    web3Mock.lido_contracts = MagicMock
+    web3Mock.catalist_contracts = MagicMock
 
     sb = SafeBorder(w3=web3Mock, blockstamp=MagicMock, chain_config=MagicMock, frame_config=MagicMock)
 
@@ -51,7 +51,7 @@ def test_get_bunker_start_or_last_successful_report_epoch(
     SafeBorder._get_default_requests_border_epoch = MagicMock()
     SafeBorder._get_bunker_mode_start_timestamp = MagicMock(return_value=get_bunker_timestamp)
     web3Mock = MagicMock()
-    web3Mock.lido_contracts.get_accounting_last_processing_ref_slot = MagicMock(return_value=last_processing_ref_slot)
+    web3Mock.catalist_contracts.get_accounting_last_processing_ref_slot = MagicMock(return_value=last_processing_ref_slot)
 
     chain_config = MagicMock
     chain_config.slots_per_epoch = slots_per_epoch
@@ -132,7 +132,7 @@ def test_find_earliest_slashed_epoch_rounded_to_frame(
     SafeBorder._slashings_in_frame = MagicMock(return_value=slashings_in_frame)
 
     web3Mock = MagicMock()
-    web3Mock.lido_contracts = MagicMock()
+    web3Mock.catalist_contracts = MagicMock()
 
     sb = SafeBorder(w3=web3Mock, blockstamp=blockstamp, chain_config=chain_config, frame_config=frame_config)
 

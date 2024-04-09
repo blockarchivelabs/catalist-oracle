@@ -5,16 +5,16 @@ import pytest
 from eth_typing import HexStr
 
 from src.constants import FAR_FUTURE_EPOCH
-from src.services.validator_state import LidoValidatorStateService
+from src.services.validator_state import CatalistValidatorStateService
 from src.modules.submodules.typings import ChainConfig
 from src.providers.consensus.typings import Validator, ValidatorState
-from src.providers.keys.typings import LidoKey
+from src.providers.keys.typings import CatalistKey
 from src.typings import BlockStamp
-from src.web3py.extensions.lido_validators import (
+from src.web3py.extensions.catalist_validators import (
     NodeOperator,
     StakingModule,
-    LidoValidatorsProvider,
-    LidoValidator,
+    CatalistValidatorsProvider,
+    CatalistValidator,
     ValidatorsByNodeOperator,
     StakingModuleId,
     NodeOperatorId,
@@ -31,14 +31,14 @@ blockstamp = ReferenceBlockStampFactory.build(
 )
 
 
-class MockValidatorsProvider(LidoValidatorsProvider):
-    def get_lido_validators(self, blockstamp: BlockStamp) -> list[LidoValidator]:
+class MockValidatorsProvider(CatalistValidatorsProvider):
+    def get_catalist_validators(self, blockstamp: BlockStamp) -> list[CatalistValidator]:
         raise NotImplementedError
 
-    def get_lido_validators_by_node_operators(self, blockstamp: BlockStamp) -> ValidatorsByNodeOperator:
+    def get_catalist_validators_by_node_operators(self, blockstamp: BlockStamp) -> ValidatorsByNodeOperator:
         def validator(index: int, exit_epoch: int, pubkey: HexStr, activation_epoch: int = 0):
-            return LidoValidator(
-                lido_id=LidoKey(
+            return CatalistValidator(
+                catalist_id=CatalistKey(
                     key=pubkey,
                     depositSignature="",
                     operatorIndex=-1,
@@ -97,7 +97,7 @@ class MockValidatorsProvider(LidoValidatorsProvider):
             )
         ]
 
-    def get_lido_node_operators(self, blockstamp: BlockStamp) -> list[NodeOperator]:
+    def get_catalist_node_operators(self, blockstamp: BlockStamp) -> list[NodeOperator]:
         def operator(id: int, total_exited_validators: int):
             return NodeOperator(
                 id=id,
@@ -118,17 +118,17 @@ class MockValidatorsProvider(LidoValidatorsProvider):
 
 
 @pytest.fixture
-def lido_validators(web3):
+def catalist_validators(web3):
     web3.attach_modules(
         {
-            'lido_validators': MockValidatorsProvider,
+            'catalist_validators': MockValidatorsProvider,
         }
     )
 
 
 @pytest.fixture
-def validator_state(web3, contracts, consensus_client, lido_validators):
-    service = LidoValidatorStateService(web3)
+def validator_state(web3, contracts, consensus_client, catalist_validators):
+    service = CatalistValidatorStateService(web3)
     requested_indexes = [3, 8]
     service._get_last_requested_validator_indices = Mock(return_value=requested_indexes)
     return service
@@ -139,10 +139,10 @@ def chain_config():
     return ChainConfig(slots_per_epoch=32, seconds_per_slot=12, genesis_time=0)
 
 
-def test_get_lido_new_stuck_validators(web3, validator_state, chain_config):
+def test_get_catalist_new_stuck_validators(web3, validator_state, chain_config):
     validator_state.get_last_requested_to_exit_pubkeys = Mock(return_value={"0x8"})
     validator_state.get_validator_delinquent_timeout_in_slot = Mock(return_value=0)
-    stuck_validators = validator_state.get_lido_newly_stuck_validators(blockstamp, chain_config)
+    stuck_validators = validator_state.get_catalist_newly_stuck_validators(blockstamp, chain_config)
     assert stuck_validators == {(1, 0): 1}
 
 
@@ -153,7 +153,7 @@ def test_get_operators_with_last_exited_validator_indexes(web3, validator_state)
 
 
 @pytest.mark.unit
-def test_get_lido_new_exited_validators(web3, validator_state):
-    exited_validators = validator_state.get_lido_newly_exited_validators(blockstamp)
+def test_get_catalist_new_exited_validators(web3, validator_state):
+    exited_validators = validator_state.get_catalist_newly_exited_validators(blockstamp)
     # We didn't expect the second validator because total_exited_validators hasn't changed
     assert exited_validators == {(1, 0): 3}

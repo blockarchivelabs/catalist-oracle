@@ -14,11 +14,11 @@ from src.modules.checks.checks_module import ChecksModule
 from src.typings import OracleModule
 from src.utils.build import get_build_info
 from src.web3py.extensions import (
-    LidoContracts,
+    CatalistContracts,
     TransactionUtils,
     ConsensusClientModule,
     KeysAPIClientModule,
-    LidoValidatorsProvider,
+    CatalistValidatorsProvider,
     FallbackProviderModule
 )
 from src.web3py.middleware import metrics_collector
@@ -38,13 +38,13 @@ def main(module_name: OracleModule):
             **build_info,
             'module': module_name,
             'ACCOUNT': variables.ACCOUNT.address if variables.ACCOUNT else 'Dry',
-            'LIDO_LOCATOR_ADDRESS': variables.LIDO_LOCATOR_ADDRESS,
+            'CATALIST_LOCATOR_ADDRESS': variables.CATALIST_LOCATOR_ADDRESS,
             'MAX_CYCLE_LIFETIME_IN_SECONDS': variables.MAX_CYCLE_LIFETIME_IN_SECONDS,
         },
     })
     ENV_VARIABLES_INFO.info({
         "ACCOUNT": str(variables.ACCOUNT.address) if variables.ACCOUNT else 'Dry',
-        "LIDO_LOCATOR_ADDRESS": str(variables.LIDO_LOCATOR_ADDRESS),
+        "CATALIST_LOCATOR_ADDRESS": str(variables.CATALIST_LOCATOR_ADDRESS),
         "FINALIZATION_BATCH_MAX_REQUEST_COUNT": str(variables.FINALIZATION_BATCH_MAX_REQUEST_COUNT),
         "MAX_CYCLE_LIFETIME_IN_SECONDS": str(variables.MAX_CYCLE_LIFETIME_IN_SECONDS),
     })
@@ -74,8 +74,8 @@ def main(module_name: OracleModule):
     check_providers_chain_ids(web3, cc, kac)
 
     web3.attach_modules({
-        'lido_contracts': LidoContracts,
-        'lido_validators': LidoValidatorsProvider,
+        'catalist_contracts': CatalistContracts,
+        'catalist_validators': CatalistValidatorsProvider,
         'transaction': TransactionUtils,
         'cc': lambda: cc,  # type: ignore[dict-item]
         'kac': lambda: kac,  # type: ignore[dict-item]

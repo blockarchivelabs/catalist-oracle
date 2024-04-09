@@ -5,9 +5,9 @@ from faker import Faker
 from pydantic_factories import Use
 
 from src.providers.consensus.typings import Validator, ValidatorState
-from src.providers.keys.typings import LidoKey
+from src.providers.keys.typings import CatalistKey
 from tests.factory.web3_factory import Web3Factory
-from src.web3py.extensions.lido_validators import StakingModule, LidoValidator, NodeOperator
+from src.web3py.extensions.catalist_validators import StakingModule, CatalistValidator, NodeOperator
 
 
 faker = Faker()
@@ -21,8 +21,8 @@ class ValidatorFactory(Web3Factory):
     __model__ = Validator
 
 
-class LidoKeyFactory(Web3Factory):
-    __model__ = LidoKey
+class CatalistKeyFactory(Web3Factory):
+    __model__ = CatalistKey
 
     used: bool = True
 
@@ -38,8 +38,8 @@ class StakingModuleFactory(Web3Factory):
     name: str = faker.name
 
 
-class LidoValidatorFactory(Web3Factory):
-    __model__ = LidoValidator
+class CatalistValidatorFactory(Web3Factory):
+    __model__ = CatalistValidator
 
     index: str = Use(lambda x: str(next(x)), count(1))
     balance: str = Use(lambda x: str(x), random.randrange(1, 10**9))

@@ -32,7 +32,7 @@ jobs:
           git tag ${{ steps.tag.outputs.tag }}
           git push https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY --tags
       - name: Create release
-        uses: lidofinance/action-gh-release@v1
+        uses: catalistfinance/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
 

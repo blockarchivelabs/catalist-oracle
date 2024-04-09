@@ -5,7 +5,7 @@ from hexbytes import HexBytes
 from web3.types import Wei
 
 from src.typings import SlotNumber, Gwei
-from src.web3py.extensions.lido_validators import StakingModuleId
+from src.web3py.extensions.catalist_validators import StakingModuleId
 
 
 @dataclass
@@ -74,7 +74,7 @@ class OracleReportLimits:
 
 
 @dataclass(frozen=True)
-class LidoReportRebase:
+class CatalistReportRebase:
     post_total_pooled_ether: int
     post_total_shares: int
     withdrawals: Wei

@@ -21,10 +21,10 @@ jobs:
     name: Build and deploy
     steps:
       - name: Testnet deploy
-        uses: lidofinance/dispatch-workflow@v1
+        uses: catalistfinance/dispatch-workflow@v1
         env:
           APP_ID: ${{ secrets.APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
-          TARGET_REPO: "lidofinance/infra-mainnet"
-          TARGET_WORKFLOW: "deploy_holesky_testnet_lido_oracle.yaml"
+          TARGET_REPO: "catalistfinance/infra-mainnet"
+          TARGET_WORKFLOW: "deploy_holesky_testnet_catalist_oracle.yaml"
           TARGET: "develop"

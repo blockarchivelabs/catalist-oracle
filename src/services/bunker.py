@@ -3,15 +3,15 @@ import logging
 from src.constants import TOTAL_BASIS_POINTS, GWEI_TO_WEI
 from src.metrics.prometheus.validators import (
     ALL_VALIDATORS,
-    LIDO_VALIDATORS,
+    CATALIST_VALIDATORS,
     ALL_SLASHED_VALIDATORS,
-    LIDO_SLASHED_VALIDATORS,
+    CATALIST_SLASHED_VALIDATORS,
 )
 from src.metrics.prometheus.duration_meter import duration_meter
 from src.services.bunker_cases.abnormal_cl_rebase import AbnormalClRebase
 from src.services.bunker_cases.midterm_slashing_penalty import MidtermSlashingPenalty
 
-from src.modules.accounting.typings import LidoReportRebase
+from src.modules.accounting.typings import CatalistReportRebase
 from src.modules.submodules.consensus import FrameConfig, ChainConfig
 from src.services.bunker_cases.typings import BunkerConfig
 from src.services.safe_border import filter_slashed_validators
@@ -29,11 +29,11 @@ class BunkerService:
       - High midterm slashing penalty
       - Abnormal CL rebase
 
-    Its purpose is to maintain socialization of all problems in Lido validators pool and to prevent sophisticated attacks.
-    To achieve this, "bunker mode" limits an operations in Lido protocol (withdrawal requests finalization)
+    Its purpose is to maintain socialization of all problems in Catalist validators pool and to prevent sophisticated attacks.
+    To achieve this, "bunker mode" limits an operations in Catalist protocol (withdrawal requests finalization)
 
     For more info about bunker mode see:
-    https://research.lido.fi/t/withdrawals-for-lido-on-ethereum-bunker-mode-design-and-implementation/
+    https://research.catalist.fi/t/withdrawals-for-catalist-on-ethereum-bunker-mode-design-and-implementation/
     """
     def __init__(self, w3: Web3):
         self.w3 = w3
@@ -44,20 +44,20 @@ class BunkerService:
         blockstamp: ReferenceBlockStamp,
         frame_config: FrameConfig,
         chain_config: ChainConfig,
-        simulated_cl_rebase: LidoReportRebase,
+        simulated_cl_rebase: CatalistReportRebase,
     ) -> bool:
         """If any of cases is True, then bunker mode is ON"""
         bunker_config = self._get_config(blockstamp)
         all_validators = self.w3.cc.get_validators(blockstamp)
-        lido_validators = self.w3.lido_validators.get_lido_validators(blockstamp)
+        catalist_validators = self.w3.catalist_validators.get_catalist_validators(blockstamp)
 
         # Set metrics
         ALL_VALIDATORS.set(len(all_validators))
-        LIDO_VALIDATORS.set(len(lido_validators))
+        CATALIST_VALIDATORS.set(len(catalist_validators))
         ALL_SLASHED_VALIDATORS.set(len(filter_slashed_validators(all_validators)))
-        LIDO_SLASHED_VALIDATORS.set(len(filter_slashed_validators(lido_validators)))
+        CATALIST_SLASHED_VALIDATORS.set(len(filter_slashed_validators(catalist_validators)))
 
-        last_report_ref_slot = self.w3.lido_contracts.get_accounting_last_processing_ref_slot(blockstamp)
+        last_report_ref_slot = self.w3.catalist_contracts.get_accounting_last_processing_ref_slot(blockstamp)
         # If it is the very first run, we don't check bunker mode
         if not last_report_ref_slot:
             logger.info({"msg": "No one report yet. Bunker status will not be checked"})
@@ -71,14 +71,14 @@ class BunkerService:
             return True
 
         high_midterm_slashing_penalty = MidtermSlashingPenalty.is_high_midterm_slashing_penalty(
-            blockstamp, frame_config, chain_config, all_validators, lido_validators, current_report_cl_rebase, last_report_ref_slot
+            blockstamp, frame_config, chain_config, all_validators, catalist_validators, current_report_cl_rebase, last_report_ref_slot
         )
         if high_midterm_slashing_penalty:
             logger.info({"msg": "Bunker ON. High midterm slashing penalty"})
             return True
 
         abnormal_cl_rebase = AbnormalClRebase(self.w3, chain_config, bunker_config).is_abnormal_cl_rebase(
-            blockstamp, all_validators, lido_validators, current_report_cl_rebase
+            blockstamp, all_validators, catalist_validators, current_report_cl_rebase
         )
         if abnormal_cl_rebase:
             logger.info({"msg": "Bunker ON. Abnormal CL rebase"})
@@ -86,7 +86,7 @@ class BunkerService:
 
         return False
 
-    def get_cl_rebase_for_current_report(self, blockstamp: BlockStamp, simulated_cl_rebase: LidoReportRebase) -> Gwei:
+    def get_cl_rebase_for_current_report(self, blockstamp: BlockStamp, simulated_cl_rebase: CatalistReportRebase) -> Gwei:
         """
         Get simulated Cl rebase and subtract total supply before report
         """
@@ -99,11 +99,11 @@ class BunkerService:
         return Gwei(frame_cl_rebase)
 
     def _get_total_supply(self, blockstamp: BlockStamp) -> Gwei:
-        return self.w3.lido_contracts.lido.functions.totalSupply().call(block_identifier=blockstamp.block_hash)
+        return self.w3.catalist_contracts.catalist.functions.totalSupply().call(block_identifier=blockstamp.block_hash)
 
     def _get_config(self, blockstamp: BlockStamp) -> BunkerConfig:
         """Get config values from OracleDaemonConfig contract"""
-        config = self.w3.lido_contracts.oracle_daemon_config
+        config = self.w3.catalist_contracts.oracle_daemon_config
         return BunkerConfig(
             Web3.to_int(
                 config.functions.get('NORMALIZED_CL_REWARD_PER_EPOCH').call(block_identifier=blockstamp.block_hash)

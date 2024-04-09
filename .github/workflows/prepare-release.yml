@@ -19,7 +19,7 @@ jobs:
 
       - name: Bump version
         id: changelog
-        uses: lidofinance/conventional-changelog-action@v3
+        uses: catalistfinance/conventional-changelog-action@v3
         with:
           git-message: "chore(release): {version}"
           tag-prefix: ""
@@ -38,7 +38,7 @@ jobs:
           echo "::error::No version output found for the prev step! Try restarting action" && exit 1
 
       - name: Create Pull Request
-        uses: lidofinance/create-pull-request@v4
+        uses: catalistfinance/create-pull-request@v4
         if: ${{ steps.changelog.outputs.version }}
         with:
           branch: pre-release-${{ steps.changelog.outputs.version }}

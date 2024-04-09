@@ -2,14 +2,14 @@ import pytest
 from hexbytes import HexBytes
 
 from src.modules.accounting.extra_data import ExtraDataService, ExtraData, FormatList
-from src.web3py.extensions.lido_validators import NodeOperatorGlobalIndex, LidoValidator
+from src.web3py.extensions.catalist_validators import NodeOperatorGlobalIndex, CatalistValidator
 
 
 pytestmark = pytest.mark.unit
 
 
 @pytest.fixture()
-def extra_data_service(lido_validators):
+def extra_data_service(catalist_validators):
     return ExtraDataService()
 
 

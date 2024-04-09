@@ -38,10 +38,10 @@ jobs:
           TAG: ${{ inputs.tag }}
 
       - name: Build prod image
-        uses: lidofinance/dispatch-workflow@v1
+        uses: catalistfinance/dispatch-workflow@v1
         env:
           APP_ID: ${{ secrets.APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
-          TARGET_REPO: "lidofinance/infra-mainnet"
+          TARGET_REPO: "catalistfinance/infra-mainnet"
           TAG: "${{ steps.tag_name.outputs.TAG }}"
-          TARGET_WORKFLOW: "build_mainnet_lido_oracle.yaml"
+          TARGET_WORKFLOW: "build_mainnet_catalist_oracle.yaml"

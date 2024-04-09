@@ -9,9 +9,9 @@ ALL_VALIDATORS = Gauge(
     namespace=PROMETHEUS_PREFIX,
 )
 
-LIDO_VALIDATORS = Gauge(
-    "lido_validators",
-    "Lido validators",
+CATALIST_VALIDATORS = Gauge(
+    "catalist_validators",
+    "Catalist validators",
     namespace=PROMETHEUS_PREFIX,
 )
 
@@ -21,8 +21,8 @@ ALL_SLASHED_VALIDATORS = Gauge(
     namespace=PROMETHEUS_PREFIX,
 )
 
-LIDO_SLASHED_VALIDATORS = Gauge(
-    "lido_slashed_validators",
-    "Lido slashed validators",
+CATALIST_SLASHED_VALIDATORS = Gauge(
+    "catalist_slashed_validators",
+    "Catalist slashed validators",
     namespace=PROMETHEUS_PREFIX,
 )

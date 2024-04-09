@@ -42,7 +42,7 @@ def simple_validators(
         "nearest_epoch_distance",
         "far_epoch_distance",
         "expected_is_abnormal",
-        "lido_validators_exist",
+        "catalist_validators_exist",
     ),
     [
         (simple_ref_blockstamp(40), 378585832, 0, 0, False, True),  # < mistake rate
@@ -59,7 +59,7 @@ def test_is_abnormal_cl_rebase(
     blockstamp,
     abnormal_case,
     mock_get_accounting_last_processing_ref_slot,
-    mock_get_used_lido_keys,
+    mock_get_used_catalist_keys,
     mock_get_eth_distributed_events,
     mock_get_withdrawal_vault_balance,
     mock_get_blockstamp,
@@ -67,13 +67,13 @@ def test_is_abnormal_cl_rebase(
     nearest_epoch_distance,
     far_epoch_distance,
     expected_is_abnormal,
-    lido_validators_exist,
+    catalist_validators_exist,
 ):
     all_validators = abnormal_case.w3.cc.get_validators(blockstamp)
 
-    lido_validators = []
-    if lido_validators_exist:
-        lido_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
+    catalist_validators = []
+    if catalist_validators_exist:
+        catalist_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
 
     abnormal_case.b_conf = BunkerConfig(
         normalized_cl_reward_per_epoch=64,
@@ -81,7 +81,7 @@ def test_is_abnormal_cl_rebase(
         rebase_check_nearest_epoch_distance=nearest_epoch_distance,
         rebase_check_distant_epoch_distance=far_epoch_distance,
     )
-    result = abnormal_case.is_abnormal_cl_rebase(blockstamp, all_validators, lido_validators, frame_cl_rebase)
+    result = abnormal_case.is_abnormal_cl_rebase(blockstamp, all_validators, catalist_validators, frame_cl_rebase)
 
     assert result == expected_is_abnormal
 
@@ -95,9 +95,9 @@ def test_is_abnormal_cl_rebase(
         (simple_ref_blockstamp(123), 1120376622),
     ],
 )
-def test_calculate_lido_normal_cl_rebase(
+def test_calculate_catalist_normal_cl_rebase(
     abnormal_case,
-    mock_get_used_lido_keys,
+    mock_get_used_catalist_keys,
     mock_get_accounting_last_processing_ref_slot,
     mock_get_eth_distributed_events,
     mock_get_withdrawal_vault_balance,
@@ -106,10 +106,10 @@ def test_calculate_lido_normal_cl_rebase(
     expected_rebase,
 ):
     abnormal_case.all_validators = abnormal_case.w3.cc.get_validators(blockstamp)
-    abnormal_case.lido_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
-    abnormal_case.lido_keys = abnormal_case.w3.kac.get_used_lido_keys(blockstamp)
+    abnormal_case.catalist_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
+    abnormal_case.catalist_keys = abnormal_case.w3.kac.get_used_catalist_keys(blockstamp)
 
-    result = abnormal_case._calculate_lido_normal_cl_rebase(blockstamp)
+    result = abnormal_case._calculate_catalist_normal_cl_rebase(blockstamp)
 
     assert result == expected_rebase
 
@@ -146,8 +146,8 @@ def test_is_negative_specific_cl_rebase(
     far_epoch_distance,
     expected_is_negative,
 ):
-    abnormal_case.lido_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
-    abnormal_case.lido_keys = [
+    abnormal_case.catalist_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
+    abnormal_case.catalist_keys = [
         simple_key('0x03'),
         simple_key('0x04'),
         simple_key('0x05'),
@@ -216,8 +216,8 @@ def test_calculate_cl_rebase_between_blocks(
     blockstamp,
     expected_rebase,
 ):
-    abnormal_case.lido_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
-    abnormal_case.lido_keys = [
+    abnormal_case.catalist_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
+    abnormal_case.catalist_keys = [
         simple_key('0x03'),
         simple_key('0x04'),
         simple_key('0x05'),
@@ -238,15 +238,15 @@ def test_calculate_cl_rebase_between_blocks(
         (simple_ref_blockstamp(20), 77999899300),
     ],
 )
-def test_get_lido_validators_balance_with_vault(
+def test_get_catalist_validators_balance_with_vault(
     abnormal_case,
     mock_get_withdrawal_vault_balance,
     blockstamp,
     expected_result,
 ):
-    lido_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
+    catalist_validators = abnormal_case.w3.cc.get_validators(blockstamp)[3:6]
 
-    result = abnormal_case._get_lido_validators_balance_with_vault(blockstamp, lido_validators)
+    result = abnormal_case._get_catalist_validators_balance_with_vault(blockstamp, catalist_validators)
 
     assert result == expected_result
 
@@ -350,7 +350,7 @@ def test_calculate_real_balance(validators, expected_balance):
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    ("epoch_passed", "mean_lido", "mean_total", "expected"),
+    ("epoch_passed", "mean_catalist", "mean_total", "expected"),
     [
         (0, 32 * 152261 * 10**9, 32 * 517310 * 10**9, 0),
         (1, 32 * 152261 * 10**9, 32 * 517310 * 10**9, 2423640516),
@@ -358,7 +358,7 @@ def test_calculate_real_balance(validators, expected_balance):
         (450, 32 * 152261 * 10**9, 32 * 517310 * 10**9, 1090638232347),
     ],
 )
-def test_calculate_normal_cl_rebase(epoch_passed, mean_lido, mean_total, expected):
+def test_calculate_normal_cl_rebase(epoch_passed, mean_catalist, mean_total, expected):
     bunker_config = BunkerConfig(
         normalized_cl_reward_per_epoch=64,
         normalized_cl_reward_mistake_rate=0.1,
@@ -369,7 +369,7 @@ def test_calculate_normal_cl_rebase(epoch_passed, mean_lido, mean_total, expecte
     normal_cl_rebase = AbnormalClRebase.calculate_normal_cl_rebase(
         bunker_config,
         mean_total,
-        mean_lido,
+        mean_catalist,
         epoch_passed,
     )
     assert normal_cl_rebase == expected

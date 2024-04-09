@@ -1,9 +1,9 @@
-# <img src="https://docs.lido.fi/img/logo.svg" alt="Lido" width="46"/> Lido Oracle
+# <img src="https://docs.catalist.fi/img/logo.svg" alt="Catalist" width="46"/> Catalist Oracle
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Tests](https://github.com/lidofinance/lido-oracle/workflows/Tests/badge.svg?branch=daemon_v2)](https://github.com/lidofinance/lido-oracle/actions)
+[![Tests](https://github.com/catalistfinance/catalist-oracle/workflows/Tests/badge.svg?branch=daemon_v2)](https://github.com/catalistfinance/catalist-oracle/actions)
 
-Oracle daemon for Lido decentralized staking service: Monitoring the state of the protocol across both layers and submitting regular update reports to the Lido smart contracts.
+Oracle daemon for Catalist decentralized staking service: Monitoring the state of the protocol across both layers and submitting regular update reports to the Catalist smart contracts.
 
 ## How it works
 
@@ -36,14 +36,14 @@ The frame includes these stages:
 
 ### Ejector module
 
-Ejector module requests Lido validators to eject via events in Execution Layer when the protocol requires additional funds to process user withdrawals.
+Ejector module requests Catalist validators to eject via events in Execution Layer when the protocol requires additional funds to process user withdrawals.
 
 **Flow**
 
 - Finds out how much ETH is needed to cover withdrawals.
-- Predicts mean Lido income into Withdrawal and Execution Rewards Vaults.
+- Predicts mean Catalist income into Withdrawal and Execution Rewards Vaults.
 - Figures out when the next validator will be withdrawn.
-- Encode Lido validators to eject int bytes and send transaction.
+- Encode Catalist validators to eject int bytes and send transaction.
 
 # Usage
 
@@ -86,28 +86,28 @@ Also, to calculate some metrics for bunker mode Oracle needs [archive](https://e
 
 ### Keys API Service
 
-This is a separate service that uses Consensus and Execution Clients to fetch all lido keys. It stores the latest state of lido keys in database.
+This is a separate service that uses Consensus and Execution Clients to fetch all catalist keys. It stores the latest state of catalist keys in database.
 
-[Lido Keys API repository.](https://github.com/lidofinance/lido-keys-api)
+[Catalist Keys API repository.](https://github.com/catalistfinance/catalist-keys-api)
 
 ## Setup
 
-Oracle daemon could be run using a docker container. Images is available on [Docker Hub](https://hub.docker.com/r/lidofinance/oracle).
+Oracle daemon could be run using a docker container. Images is available on [Docker Hub](https://hub.docker.com/r/catalistfinance/oracle).
 Pull the image using the following command:
 
 ```bash
-docker pull lidofinance/oracle:{tag}
+docker pull catalistfinance/oracle:{tag}
 ```
 
-Where `{tag}` is a version of the image. You can find the latest version in the [releases](https://github.com/lidofinance/lido-oracle/releases)
+Where `{tag}` is a version of the image. You can find the latest version in the [releases](https://github.com/catalistfinance/catalist-oracle/releases)
 **OR**\
-You can build it locally using the following command (make sure build it from latest [release](https://github.com/lidofinance/lido-oracle/releases)):
+You can build it locally using the following command (make sure build it from latest [release](https://github.com/catalistfinance/catalist-oracle/releases)):
 
 ```bash
-docker build -t lidofinance/oracle .
+docker build -t catalistfinance/oracle .
 ```
 
-Full variables list could be found [here](https://github.com/lidofinance/lido-oracle#env-variables).
+Full variables list could be found [here](https://github.com/catalistfinance/catalist-oracle#env-variables).
 
 ## Checks before running
 
@@ -115,7 +115,7 @@ Full variables list could be found [here](https://github.com/lidofinance/lido-or
    Set required values. It will be enough to run the oracle in _check mode_.
 2. Check that your environment is ready to run the oracle using the following command:
    ```bash
-   docker run -ti --env-file .env --rm lidofinance/oracle:{tag} check
+   docker run -ti --env-file .env --rm catalistfinance/oracle:{tag} check
    ```
    If everything is ok, you will see that all required checks are passed
    and your environment is ready to run the oracle.
@@ -134,7 +134,7 @@ Full variables list could be found [here](https://github.com/lidofinance/lido-or
 2. Run the container using the following command:
 
    ```bash
-   docker run --env-file .env lidofinance/oracle:{tag} {type}
+   docker run --env-file .env catalistfinance/oracle:{tag} {type}
    ```
 
    Replace `{tag}` with the image version and `{type}` with one of the two types of oracles: accounting or ejector.
@@ -143,7 +143,7 @@ Full variables list could be found [here](https://github.com/lidofinance/lido-or
 > For example, you can run the container using the following command:
 >
 > ```bash
-> docker run --env EXECUTION_CLIENT_URI={value} --env CONSENSUS_CLIENT_URI={value} --env KEYS_API_URI={value} --env LIDO_LOCATOR_ADDRESS={value} lidofinance/oracle:{tag} {type}
+> docker run --env EXECUTION_CLIENT_URI={value} --env CONSENSUS_CLIENT_URI={value} --env KEYS_API_URI={value} --env CATALIST_LOCATOR_ADDRESS={value} catalistfinance/oracle:{tag} {type}
 > ```
 
 ## Manual mode
@@ -151,7 +151,7 @@ Full variables list could be found [here](https://github.com/lidofinance/lido-or
 Oracle could be executed once in "manual" mode. To do this setup `DAEMON` variable to 'False'.
 
 **Note**: Use `-it` option to run manual mode in Docker container in interactive mode.  
-Example `docker run -ti --env-file .env --rm lidofinance/oracle:{tag} {type}`
+Example `docker run -ti --env-file .env --rm catalistfinance/oracle:{tag} {type}`
 
 In this mode Oracle will build report as usual (if contracts are reportable) and before submitting transactions
 Oracle will ask for manual input to send transaction.
@@ -165,7 +165,7 @@ In manual mode all sleeps are disabled and `ALLOW_REPORTING_IN_BUNKER_MODE` is T
 | `EXECUTION_CLIENT_URI`                                 | URI of the Execution Layer client                                                                                                                                        | True     | `http://localhost:8545` |
 | `CONSENSUS_CLIENT_URI`                                 | URI of the Consensus Layer client                                                                                                                                        | True     | `http://localhost:5052` |
 | `KEYS_API_URI`                                         | URI of the Keys API                                                                                                                                                      | True     | `http://localhost:8080` |
-| `LIDO_LOCATOR_ADDRESS`                                 | Address of the Lido contract                                                                                                                                             | True     | `0x1...`                |
+| `CATALIST_LOCATOR_ADDRESS`                                 | Address of the Catalist contract                                                                                                                                             | True     | `0x1...`                |
 | `MEMBER_PRIV_KEY`                                      | Private key of the Oracle member account                                                                                                                                 | False    | `0x1...`                |
 | `MEMBER_PRIV_KEY_FILE`                                 | A path to the file contained the private key of the Oracle member account. It takes precedence over `MEMBER_PRIV_KEY`                                                    | False    | `/app/private_key`      |
 | `FINALIZATION_BATCH_MAX_REQUEST_COUNT`                 | The size of the batch to be finalized per request (The larger the batch size, the more memory of the contract is used but the fewer requests are needed)                 | False    | `1000`                  |
@@ -186,11 +186,11 @@ In manual mode all sleeps are disabled and `ALLOW_REPORTING_IN_BUNKER_MODE` is T
 | `MAX_PRIORITY_FEE`                                     | Max priority fee that would be used to send tx                                                                                                                           | False    | `100000000000`          |
 
 ### Mainnet variables
-> LIDO_LOCATOR_ADDRESS=0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb  
+> CATALIST_LOCATOR_ADDRESS=0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb  
 > ALLOW_REPORTING_IN_BUNKER_MODE=False
 
 ### Goerli variables
-> LIDO_LOCATOR_ADDRESS=0x1eDf09b5023DC86737b59dE68a8130De878984f5  
+> CATALIST_LOCATOR_ADDRESS=0x1eDf09b5023DC86737b59dE68a8130De878984f5  
 > ALLOW_REPORTING_IN_BUNKER_MODE=True
 
 ### Alerts
@@ -202,7 +202,7 @@ groups:
   - name: oracle-alerts
     rules:
       - alert: AccountBalance
-        expr: lido_oracle_account_balance / 10^18 < 1
+        expr: catalist_oracle_account_balance / 10^18 < 1
         for: 10m
         labels:
           severity: critical
@@ -210,7 +210,7 @@ groups:
           summary: "Dangerously low account balance"
           description: "Account balance is less than 1 ETH. Address: {.labels.address}: {.value} ETH"
       - alert: OutdatedData
-        expr: (lido_oracle_genesis_time + ignoring (state) lido_oracle_slot_number{state="head"} * 12) < time() - 300
+        expr: (catalist_oracle_genesis_time + ignoring (state) catalist_oracle_slot_number{state="head"} * 12) < time() - 300
         for: 1h
         labels:
           severity: critical
@@ -221,14 +221,14 @@ groups:
 
 ### Metrics
 
-> **Note**: all metrics are prefixed with `lido_oracle_` by default.
+> **Note**: all metrics are prefixed with `catalist_oracle_` by default.
 
 The oracle exposes the following basic metrics:
 
 | Metric name                 | Description                                                     | Labels                                                                                             |
 |-----------------------------|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
 | build_info                  | Build info                                                      | version, branch, commit                                                                            |
-| env_variables_info          | Env variables for the app                                       | ACCOUNT, LIDO_LOCATOR_ADDRESS, FINALIZATION_BATCH_MAX_REQUEST_COUNT, MAX_CYCLE_LIFETIME_IN_SECONDS |
+| env_variables_info          | Env variables for the app                                       | ACCOUNT, CATALIST_LOCATOR_ADDRESS, FINALIZATION_BATCH_MAX_REQUEST_COUNT, MAX_CYCLE_LIFETIME_IN_SECONDS |
 | genesis_time                | Fetched genesis time from node                                  |                                                                                                    |
 | account_balance             | Fetched account balance from EL                                 | address                                                                                            |
 | slot_number                 | Last fetched slot number from CL                                | state (`head` or `finalized`)                                                                      |
@@ -287,7 +287,7 @@ Required variables
 export EXECUTION_CLIENT_URI=...
 export CONSENSUS_CLIENT_URI=...
 export KEYS_API_URI=...
-export LIDO_LOCATOR_ADDRESS=...
+export CATALIST_LOCATOR_ADDRESS=...
 ```
 
 Run oracle module
@@ -329,7 +329,7 @@ mypy src
 
 # License
 
-2023 Lido <info@lido.fi>
+2023 Catalist <info@catalist.fi>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

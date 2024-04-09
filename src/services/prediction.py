@@ -19,7 +19,7 @@ class RewardsPredictionService:
     """
     Based on events predicts amount of eth that protocol will earn per epoch.
 
-    **Note** Withdraw amount in Oracle report is limited, so prediction shows not actual Lido rewards, but medium.
+    **Note** Withdraw amount in Oracle report is limited, so prediction shows not actual Catalist rewards, but medium.
     amount of ETH that were withdrawn in Oracle reports.
     """
     def __init__(self, w3: Web3):
@@ -34,7 +34,7 @@ class RewardsPredictionService:
         logger.info({'msg': 'Fetch prediction frame in slots.', 'value': prediction_duration_in_slots})
 
         token_rebase_events = get_events_in_past(
-            self.w3.lido_contracts.lido.events.TokenRebased,  # type: ignore[arg-type]
+            self.w3.catalist_contracts.catalist.events.TokenRebased,  # type: ignore[arg-type]
             blockstamp,
             prediction_duration_in_slots,
             chain_configs.seconds_per_slot,
@@ -42,7 +42,7 @@ class RewardsPredictionService:
         )
 
         eth_distributed_events = get_events_in_past(
-            self.w3.lido_contracts.lido.events.ETHDistributed,  # type: ignore[arg-type]
+            self.w3.catalist_contracts.catalist.events.ETHDistributed,  # type: ignore[arg-type]
             blockstamp,
             prediction_duration_in_slots,
             chain_configs.seconds_per_slot,
@@ -53,7 +53,7 @@ class RewardsPredictionService:
             events = self._group_events_by_transaction_hash(token_rebase_events, eth_distributed_events)
         except InconsistentEvents as error:
             msg = (
-                f'ETHDistributed and TokenRebased events from {self.w3.lido_contracts.lido.address} are inconsistent.'
+                f'ETHDistributed and TokenRebased events from {self.w3.catalist_contracts.catalist.address} are inconsistent.'
                 f'In each tx with ETHDistributed event should be one TokenRebased event.'
             )
             logger.error({'msg': msg, 'error': str(error)})
@@ -105,7 +105,7 @@ class RewardsPredictionService:
 
     def _get_prediction_duration_in_slots(self, blockstamp: ReferenceBlockStamp) -> int:
         return Web3.to_int(
-            self.w3.lido_contracts.oracle_daemon_config.functions.get('PREDICTION_DURATION_IN_SLOTS').call(
+            self.w3.catalist_contracts.oracle_daemon_config.functions.get('PREDICTION_DURATION_IN_SLOTS').call(
                 block_identifier=blockstamp.block_hash,
             )
         )

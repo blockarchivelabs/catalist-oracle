@@ -3,7 +3,7 @@ from typing import Optional, cast
 
 from src.metrics.prometheus.basic import KEYS_API_REQUESTS_DURATION, KEYS_API_LATEST_BLOCKNUMBER
 from src.providers.http_provider import HTTPProvider
-from src.providers.keys.typings import LidoKey, KeysApiStatus
+from src.providers.keys.typings import CatalistKey, KeysApiStatus
 from src.typings import BlockStamp
 from src.utils.dataclass import list_of_dataclasses
 from src.utils.cache import global_lru_cache as lru_cache
@@ -15,13 +15,13 @@ class KeysOutdatedException(Exception):
 
 class KeysAPIClient(HTTPProvider):
     """
-    Lido Keys are stored in different modules in on-chain and off-chain format.
-    Keys API service fetches all lido keys and provide them in convenient format.
+    Catalist Keys are stored in different modules in on-chain and off-chain format.
+    Keys API service fetches all catalist keys and provide them in convenient format.
     Keys could not be deleted, so the amount of them always increasing.
     One thing to check before use data from Keys API service is that latest fetched block in meta field is greater
     than the block we are fetching on.
 
-    Keys API specification can be found here https://keys-api.lido.fi/api/static/index.html
+    Keys API specification can be found here https://keys-api.catalist.fi/api/static/index.html
     """
     PROMETHEUS_HISTOGRAM = KEYS_API_REQUESTS_DURATION
 
@@ -45,13 +45,13 @@ class KeysAPIClient(HTTPProvider):
         raise KeysOutdatedException(f'Keys API Service stuck, no updates for {self.backoff_factor * self.retry_count} seconds.')
 
     @lru_cache(maxsize=1)
-    @list_of_dataclasses(LidoKey.from_response)
-    def get_used_lido_keys(self, blockstamp: BlockStamp) -> list[dict]:
-        """Docs: https://keys-api.lido.fi/api/static/index.html#/keys/KeysController_get"""
+    @list_of_dataclasses(CatalistKey.from_response)
+    def get_used_catalist_keys(self, blockstamp: BlockStamp) -> list[dict]:
+        """Docs: https://keys-api.catalist.fi/api/static/index.html#/keys/KeysController_get"""
         return cast(list[dict], self._get_with_blockstamp(self.USED_KEYS, blockstamp))
 
     def get_status(self) -> KeysApiStatus:
-        """Docs: https://keys-api.lido.fi/api/static/index.html#/status/StatusController_get"""
+        """Docs: https://keys-api.catalist.fi/api/static/index.html#/status/StatusController_get"""
         data, _ = self._get(self.STATUS)
         return KeysApiStatus.from_response(**cast(dict, data))
 

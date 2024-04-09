@@ -11,9 +11,9 @@ from src.web3py.contract_tweak import tweak_w3_contracts
 from src.web3py.extensions import (
     ConsensusClientModule,
     KeysAPIClientModule,
-    LidoValidatorsProvider,
+    CatalistValidatorsProvider,
     TransactionUtils,
-    LidoContracts,
+    CatalistContracts,
     FallbackProviderModule,
 )
 from src.web3py.typings import Web3
@@ -33,13 +33,13 @@ def web3():
     kac = KeysAPIClientModule(variables.KEYS_API_URI, web3)
 
     web3.attach_modules({
-        'lido_validators': LidoValidatorsProvider,
+        'catalist_validators': CatalistValidatorsProvider,
         'transaction': TransactionUtils,
         'cc': lambda: cc,  # type: ignore[dict-item]
         'kac': lambda: kac,  # type: ignore[dict-item]
     })
-    if variables.LIDO_LOCATOR_ADDRESS:
-        web3.attach_modules({'lido_contracts': LidoContracts})
+    if variables.CATALIST_LOCATOR_ADDRESS:
+        web3.attach_modules({'catalist_contracts': CatalistContracts})
 
     return web3
 

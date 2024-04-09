@@ -54,20 +54,20 @@ def test_receive_last_finalized_slot(oracle):
 
 @pytest.mark.unit
 def test_cycle_handler_run_once_per_slot(oracle, contracts, web3):
-    web3.lido_contracts.has_contract_address_changed = Mock()
+    web3.catalist_contracts.has_contract_address_changed = Mock()
     oracle._receive_last_finalized_slot = Mock(return_value=ReferenceBlockStampFactory.build(slot_number=1))
     oracle.cycle_handler()
     assert oracle.call_count == 1
-    assert web3.lido_contracts.has_contract_address_changed.call_count == 1
+    assert web3.catalist_contracts.has_contract_address_changed.call_count == 1
 
     oracle.cycle_handler()
     assert oracle.call_count == 1
-    assert web3.lido_contracts.has_contract_address_changed.call_count == 1
+    assert web3.catalist_contracts.has_contract_address_changed.call_count == 1
 
     oracle._receive_last_finalized_slot = Mock(return_value=ReferenceBlockStampFactory.build(slot_number=2))
     oracle.cycle_handler()
     assert oracle.call_count == 2
-    assert web3.lido_contracts.has_contract_address_changed.call_count == 2
+    assert web3.catalist_contracts.has_contract_address_changed.call_count == 2
 
 
 @pytest.mark.unit

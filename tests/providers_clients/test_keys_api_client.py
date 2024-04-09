@@ -19,9 +19,9 @@ empty_blockstamp = ReferenceBlockStampFactory.build(block_number=0)
 
 
 @pytest.mark.integration
-def test_get_used_lido_keys(keys_api_client):
-    lido_keys = keys_api_client.get_used_lido_keys(empty_blockstamp)
-    assert lido_keys
+def test_get_used_catalist_keys(keys_api_client):
+    catalist_keys = keys_api_client.get_used_catalist_keys(empty_blockstamp)
+    assert catalist_keys
 
 
 @pytest.mark.integration
@@ -45,7 +45,7 @@ def test_get_with_blockstamp_retries_exhausted(keys_api_client, monkeypatch):
     with pytest.raises(KeysOutdatedException):
         with monkeypatch.context() as m:
             m.setattr(keys_api_client_module, "sleep", sleep_mock)
-            keys_api_client.get_used_lido_keys(empty_blockstamp)
+            keys_api_client.get_used_catalist_keys(empty_blockstamp)
 
     assert sleep_mock.call_count == variables.HTTP_REQUEST_RETRY_COUNT_KEYS_API - 1
     sleep_mock.assert_called_with(variables.HTTP_REQUEST_SLEEP_BEFORE_RETRY_IN_SECONDS_KEYS_API)
