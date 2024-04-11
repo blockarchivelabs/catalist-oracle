@@ -75,7 +75,7 @@ class Withdrawal:
         self, share_rate: int, available_eth: int, until_timestamp: int
     ) -> list[int]:
         state = BatchState(
-            remaining_eth_budget=available_eth,
+            remaining_ace_budget=available_eth,
             finished=False,
             batches=[0] * self._fetch_max_batches_length(),
             batches_length=0
@@ -101,12 +101,12 @@ class Withdrawal:
         )
 
     def _fetch_buffered_ether(self) -> Wei:
-        return Wei(self.w3.catalist_contracts.catalist.functions.getBufferedEther().call(
+        return Wei(self.w3.catalist_contracts.catalist.functions.getBufferedAce().call(
             block_identifier=self.blockstamp.block_hash
         ))
 
     def _fetch_unfinalized_steth(self) -> Wei:
-        return Wei(self.w3.catalist_contracts.withdrawal_queue_nft.functions.unfinalizedStETH().call(
+        return Wei(self.w3.catalist_contracts.withdrawal_queue_nft.functions.unfinalizedStACE().call(
             block_identifier=self.blockstamp.block_hash
         ))
 

@@ -89,14 +89,14 @@ class Account:
 
 @dataclass
 class BatchState:
-    remaining_eth_budget: int
+    remaining_ace_budget: int
     finished: bool
     batches: list[int]
     batches_length: int
 
     def as_tuple(self):
         return (
-            self.remaining_eth_budget,
+            self.remaining_ace_budget,
             self.finished,
             self.batches,
             self.batches_length
