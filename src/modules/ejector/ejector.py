@@ -230,13 +230,13 @@ class Ejector(BaseModule, ConsensusModule):
         We won't eject validators at all, because we have enough eth to fulfill all requests.
         """
         return Wei(
-            self.w3.catalist_contracts.catalist.functions.getBufferedEther().call(
+            self.w3.catalist_contracts.catalist.functions.getBufferedAce().call(
                 block_identifier=blockstamp.block_hash
             )
         )
 
     def get_total_unfinalized_withdrawal_requests_amount(self, blockstamp: BlockStamp) -> Wei:
-        unfinalized_steth = self.w3.catalist_contracts.withdrawal_queue_nft.functions.unfinalizedStETH().call(
+        unfinalized_steth = self.w3.catalist_contracts.withdrawal_queue_nft.functions.unfinalizedStACE().call(
             block_identifier=blockstamp.block_hash,
         )
         return unfinalized_steth
