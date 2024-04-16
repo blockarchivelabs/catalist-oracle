@@ -254,7 +254,7 @@ def test_get_rewards_no_matching_events(web3, contracts):
     )
 
     web3.catalist_contracts.catalist.events = MagicMock()
-    web3.catalist_contracts.catalist.events.ETHDistributed.get_logs.return_value = []
+    web3.catalist_contracts.catalist.events.ACEDistributed.get_logs.return_value = []
     web3.catalist_contracts.catalist.events.TokenRebased.get_logs.return_value = []
 
     p = RewardsPredictionService(web3)

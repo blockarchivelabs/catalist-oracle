@@ -257,7 +257,7 @@ def test_get_catalist_validators_balance_with_vault(
     [
         (simple_ref_blockstamp(0), simple_ref_blockstamp(10), 1 * 10**9),
         (simple_ref_blockstamp(10), simple_ref_blockstamp(20), 0),
-        (simple_ref_blockstamp(20), simple_ref_blockstamp(30), "More than one ETHDistributed event found"),
+        (simple_ref_blockstamp(20), simple_ref_blockstamp(30), "More than one ACEDistributed event found"),
     ],
 )
 def test_get_withdrawn_from_vault_between(

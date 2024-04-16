@@ -51,10 +51,10 @@ def main(module_name: OracleModule):
     BUILD_INFO.info(build_info)
 
     logger.info({'msg': f'Start healthcheck server for Docker container on port {variables.HEALTHCHECK_SERVER_PORT}'})
-    start_pulse_server()
+    # start_pulse_server()
 
     logger.info({'msg': f'Start http server with prometheus metrics on port {variables.PROMETHEUS_PORT}'})
-    start_http_server(variables.PROMETHEUS_PORT)
+    # start_http_server(variables.PROMETHEUS_PORT)
 
     logger.info({'msg': 'Initialize multi web3 provider.'})
     web3 = Web3(FallbackProviderModule(

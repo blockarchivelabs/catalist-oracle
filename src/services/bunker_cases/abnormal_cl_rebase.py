@@ -226,7 +226,7 @@ class AbnormalClRebase:
         self, prev_blockstamp: BlockStamp, ref_blockstamp: ReferenceBlockStamp
     ) -> Gwei:
         """
-        Lookup for ETHDistributed event and expect no one or only one event,
+        Lookup for ACEDistributed event and expect no one or only one event,
         from which we'll get withdrawalsWithdrawn value
         """
 
@@ -242,10 +242,10 @@ class AbnormalClRebase:
         )
 
         if len(events) > 1:
-            raise ValueError("More than one ETHDistributed event found")
+            raise ValueError("More than one ACEDistributed event found")
 
         if not events:
-            logger.info({"msg": "No ETHDistributed event found. Vault withdrawals: 0 Gwei."})
+            logger.info({"msg": "No ACEDistributed event found. Vault withdrawals: 0 Gwei."})
             return Gwei(0)
 
         vault_withdrawals = int(self.w3.from_wei(events[0]['args']['withdrawalsWithdrawn'], 'gwei'))
@@ -254,8 +254,8 @@ class AbnormalClRebase:
         return Gwei(vault_withdrawals)
 
     def _get_eth_distributed_events(self, from_block: BlockNumber, to_block: BlockNumber) -> list[EventData]:
-        """Get ETHDistributed events between blocks"""
-        return self.w3.catalist_contracts.catalist.events.ETHDistributed.get_logs(  # type: ignore[attr-defined]
+        """Get ACEDistributed events between blocks"""
+        return self.w3.catalist_contracts.catalist.events.ACEDistributed.get_logs(  # type: ignore[attr-defined]
             fromBlock=from_block,
             toBlock=to_block,
         )

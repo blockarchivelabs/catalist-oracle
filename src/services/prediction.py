@@ -42,7 +42,7 @@ class RewardsPredictionService:
         )
 
         eth_distributed_events = get_events_in_past(
-            self.w3.catalist_contracts.catalist.events.ETHDistributed,  # type: ignore[arg-type]
+            self.w3.catalist_contracts.catalist.events.ACEDistributed,  # type: ignore[arg-type]
             blockstamp,
             prediction_duration_in_slots,
             chain_configs.seconds_per_slot,
@@ -53,8 +53,8 @@ class RewardsPredictionService:
             events = self._group_events_by_transaction_hash(token_rebase_events, eth_distributed_events)
         except InconsistentEvents as error:
             msg = (
-                f'ETHDistributed and TokenRebased events from {self.w3.catalist_contracts.catalist.address} are inconsistent.'
-                f'In each tx with ETHDistributed event should be one TokenRebased event.'
+                f'ACEDistributed and TokenRebased events from {self.w3.catalist_contracts.catalist.address} are inconsistent.'
+                f'In each tx with ACEDistributed event should be one TokenRebased event.'
             )
             logger.error({'msg': msg, 'error': str(error)})
             raise InconsistentEvents(msg) from error
