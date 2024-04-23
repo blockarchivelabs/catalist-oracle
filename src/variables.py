@@ -1,8 +1,6 @@
-from dotenv import load_dotenv
 import os
 
 from eth_account import Account
-load_dotenv()
 
 # - Providers-
 EXECUTION_CLIENT_URI = os.getenv('EXECUTION_CLIENT_URI', '').split(',')

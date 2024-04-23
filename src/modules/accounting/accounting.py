@@ -62,6 +62,8 @@ class Accounting(BaseModule, ConsensusModule):
     def execute_module(self, last_finalized_blockstamp: BlockStamp) -> ModuleExecuteDelay:
         report_blockstamp = self.get_blockstamp_for_report(last_finalized_blockstamp)
 
+        logger.info({'msg': 'report_blockstamp.', 'value': report_blockstamp})
+
         if not report_blockstamp:
             return ModuleExecuteDelay.NEXT_FINALIZED_EPOCH
 
@@ -278,7 +280,7 @@ class Accounting(BaseModule, ConsensusModule):
             0,  # _simulatedShareRate
         )
 
-        logger.info({'msg': 'Simulate catalist rebase for report.', 'value': simulated_tx.args})
+        logger.info({'msg': 'Simulate catalist rebase for report.', 'value': simulated_tx.args, 'cl_balance' : cl_balance, 'Web3.to_wei(cl_balance, gwei)' : Web3.to_wei(cl_balance, 'gwei')})
 
         result = simulated_tx.call(
             transaction={'from': self.w3.catalist_contracts.accounting_oracle.address},
