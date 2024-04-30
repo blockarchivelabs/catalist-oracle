@@ -235,18 +235,6 @@
     "type": "function"
   },
   {
-    "constant": false,
-    "inputs": [
-      { "name": "adr", "type": "address" },
-      { "name": "status", "type": "bool" }
-    ],
-    "name": "setOwner",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "constant": true,
     "inputs": [],
     "name": "getWithdrawalCredentials",
