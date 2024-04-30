@@ -114,9 +114,11 @@ class ConsensusModule(ABC):
             consensus_contract.functions.getFrameConfig().call(block_identifier=blockstamp.block_hash),
             FrameConfig,
         )
+        fc = FrameConfig(initial_epoch=12600, epochs_per_frame=56, fast_lane_length_slots=10)
+
         logger.info({'msg': 'Fetch frame config.', 'value': fc})
         return fc
-
+        
     @lru_cache(maxsize=1)
     def get_member_info(self, blockstamp: BlockStamp) -> MemberInfo:
         consensus_contract = self._get_consensus_contract(blockstamp)
