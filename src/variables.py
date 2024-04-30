@@ -1,8 +1,6 @@
-from dotenv import load_dotenv
 import os
 
 from eth_account import Account
-load_dotenv()
 
 # - Providers-
 EXECUTION_CLIENT_URI = os.getenv('EXECUTION_CLIENT_URI', '').split(',')
@@ -68,7 +66,7 @@ HTTP_REQUEST_SLEEP_BEFORE_RETRY_IN_SECONDS_KEYS_API = int(
 )
 
 # - Metrics -
-PROMETHEUS_PORT = int(os.getenv('PROMETHEUS_PORT', 9000))
+PROMETHEUS_PORT = int(os.getenv('PROMETHEUS_PORT', 3002))
 PROMETHEUS_PREFIX = os.getenv("PROMETHEUS_PREFIX", "catalist_oracle")
 
 HEALTHCHECK_SERVER_PORT = int(os.getenv('HEALTHCHECK_SERVER_PORT', 9010))

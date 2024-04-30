@@ -48,4 +48,5 @@ HEALTHCHECK --interval=10s --timeout=3s \
 
 WORKDIR /app/
 
-ENTRYPOINT ["python3", "-m", "src.main"]
+# ENTRYPOINT ["python3", "-m", "src.main", "$CMD_PARAMETER"]
+ENTRYPOINT ["sh", "-c", "python3 -m src.main $CMD_PARAMETER"]

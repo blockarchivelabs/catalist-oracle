@@ -40,6 +40,7 @@ def main(module_name: OracleModule):
             'ACCOUNT': variables.ACCOUNT.address if variables.ACCOUNT else 'Dry',
             'CATALIST_LOCATOR_ADDRESS': variables.CATALIST_LOCATOR_ADDRESS,
             'MAX_CYCLE_LIFETIME_IN_SECONDS': variables.MAX_CYCLE_LIFETIME_IN_SECONDS,
+            'ALLOW_REPORTING_IN_BUNKER_MODE': variables.ALLOW_REPORTING_IN_BUNKER_MODE,
         },
     })
     ENV_VARIABLES_INFO.info({
@@ -54,9 +55,9 @@ def main(module_name: OracleModule):
     # start_pulse_server()
 
     logger.info({'msg': f'Start http server with prometheus metrics on port {variables.PROMETHEUS_PORT}'})
-    # start_http_server(variables.PROMETHEUS_PORT)
+    start_http_server(variables.PROMETHEUS_PORT)
 
-    logger.info({'msg': 'Initialize multi web3 provider.'})
+    logger.info({'msg': 'Initialize multi web3 provider.', 'execution client uri' : variables.EXECUTION_CLIENT_URI})
     web3 = Web3(FallbackProviderModule(
         variables.EXECUTION_CLIENT_URI,
         request_kwargs={'timeout': variables.HTTP_REQUEST_TIMEOUT_EXECUTION}
@@ -65,10 +66,10 @@ def main(module_name: OracleModule):
     logger.info({'msg': 'Modify web3 with custom contract function call.'})
     tweak_w3_contracts(web3)
 
-    logger.info({'msg': 'Initialize consensus client.'})
+    logger.info({'msg': 'Initialize consensus client.', 'consensus client uri' : variables.CONSENSUS_CLIENT_URI})
     cc = ConsensusClientModule(variables.CONSENSUS_CLIENT_URI, web3)
 
-    logger.info({'msg': 'Initialize keys api client.'})
+    logger.info({'msg': 'Initialize keys api client.', 'url' : variables.KEYS_API_URI })
     kac = KeysAPIClientModule(variables.KEYS_API_URI, web3)
 
     check_providers_chain_ids(web3, cc, kac)

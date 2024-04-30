@@ -1,17 +1,9 @@
 [tool.poetry]
 name = "catalist-oracle"
-version = "3.0.0"
-description = "Oracle daemon for Catalist decentralized staking service. Collects and reports Ethereum 2.0 beacon chain states (the number of visible validators and their summarized balances) to the Catalist dApp contract running on Ethereum 1.0 side."
+version = "1.0.12"
+description = "Oracle daemon for Catalist decentralized staking service. Collects and reports ACE beacon chain states (the number of visible validators and their summarized balances) to the Catalist dApp contract running on ACE side."
 authors = [
-    "Raman Siamionau",
-    "Roman Kolpakov",
-    "Vladimir Gorkavenko",
-    "Sergey Khomutinin",
-    "Sergey Ivanenko",
-    "George Avsetsin",
-    "Kirill Varlamov",
-    "Smelov Vladimir",
-    "Dmitry Suldin",
+    "uncommonlab",
 ]
 license = "GPL 3.0"
 

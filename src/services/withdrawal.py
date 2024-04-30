@@ -63,9 +63,9 @@ class Withdrawal:
         return last_finalized_id < last_requested_id
 
     def _get_available_eth(self, withdrawal_vault_balance: Wei, el_rewards_vault_balance: Wei) -> Wei:
-        buffered_ether = self._fetch_buffered_ether()
+        buffered_ether = self._fetch_buffered_ace()
         # This amount of eth could not be spent for deposits.
-        unfinalized_steth = self._fetch_unfinalized_steth()
+        unfinalized_steth = self._fetch_unfinalized_bace()
 
         reserved_buffer = min(buffered_ether, unfinalized_steth)
 
@@ -100,12 +100,12 @@ class Withdrawal:
             block_identifier=self.blockstamp.block_hash
         )
 
-    def _fetch_buffered_ether(self) -> Wei:
+    def _fetch_buffered_ace(self) -> Wei:
         return Wei(self.w3.catalist_contracts.catalist.functions.getBufferedAce().call(
             block_identifier=self.blockstamp.block_hash
         ))
 
-    def _fetch_unfinalized_steth(self) -> Wei:
+    def _fetch_unfinalized_bace(self) -> Wei:
         return Wei(self.w3.catalist_contracts.withdrawal_queue_nft.functions.unfinalizedStACE().call(
             block_identifier=self.blockstamp.block_hash
         ))
