@@ -262,6 +262,15 @@ class Accounting(BaseModule, ConsensusModule):
 
         chain_conf = self.get_chain_config(blockstamp)
 
+        logger.info({'msg': 'Simulate catalist rebase for report.', 
+                     'self._get_slots_elapsed_from_last_report(blockstamp)': self._get_slots_elapsed_from_last_report(blockstamp), 
+                     'validators_count' : validators_count, 
+                     'Web3.to_wei(cl_balance, gwei)' : Web3.to_wei(cl_balance, 'gwei'),
+                     'self.w3.catalist_contracts.get_withdrawal_balance(blockstamp)' : self.w3.catalist_contracts.get_withdrawal_balance(blockstamp),
+                     'el_rewards' : el_rewards,
+                     'self.get_shares_to_burn(blockstamp)' : self.get_shares_to_burn(blockstamp)
+                     })
+
         simulated_tx = self.w3.catalist_contracts.catalist.functions.handleOracleReport(
             # We use block timestamp, instead of slot timestamp,
             # because missed slot will break simulation contract logics
