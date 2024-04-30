@@ -106,7 +106,7 @@ class Withdrawal:
         ))
 
     def _fetch_unfinalized_bace(self) -> Wei:
-        return Wei(self.w3.catalist_contracts.withdrawal_queue_nft.functions.unfinalizedStACE().call(
+        return Wei(self.w3.catalist_contracts.withdrawal_queue_nft.functions.unfinalizedBACE().call(
             block_identifier=self.blockstamp.block_hash
         ))
 
