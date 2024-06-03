@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "catalist-oracle"
-version = "1.0.12"
+version = "1.0.16"
 description = "Oracle daemon for Catalist decentralized staking service. Collects and reports ACE beacon chain states (the number of visible validators and their summarized balances) to the Catalist dApp contract running on ACE side."
 authors = [
     "uncommonlab",

@@ -114,7 +114,7 @@ class ConsensusModule(ABC):
             consensus_contract.functions.getFrameConfig().call(block_identifier=blockstamp.block_hash),
             FrameConfig,
         )
-        fc = FrameConfig(initial_epoch=12600, epochs_per_frame=56, fast_lane_length_slots=10)
+        #fc = FrameConfig(initial_epoch=12600, epochs_per_frame=56, fast_lane_length_slots=10)
 
         logger.info({'msg': 'Fetch frame config.', 'value': fc})
         return fc
