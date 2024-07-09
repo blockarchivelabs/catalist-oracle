@@ -337,4 +337,6 @@ class Accounting(BaseModule, ConsensusModule):
             cl_rebase_report,
         )
         logger.info({'msg': 'Calculate bunker mode.', 'value': bunker_mode})
+        
+        # bunker_mode = False
         return bunker_mode
