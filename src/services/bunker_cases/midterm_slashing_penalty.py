@@ -69,6 +69,9 @@ class MidtermSlashingPenalty:
         frame_cl_rebase = MidtermSlashingPenalty.get_frame_cl_rebase_from_report_cl_rebase(
             frame_config, chain_config, current_report_cl_rebase, blockstamp, last_report_ref_slot
         )
+
+        logger.info({"msg": f"Frame cl rebase: {frame_cl_rebase}"})
+        
         if max_catalist_midterm_penalty > frame_cl_rebase:
             return True
 
