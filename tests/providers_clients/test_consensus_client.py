@@ -4,6 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 from src.providers.consensus.client import ConsensusClient
+from src.providers.http_provider import NotOkResponse
 from src.providers.consensus.typings import Validator
 from src.typings import SlotNumber
 from src.utils.blockstamp import build_blockstamp
@@ -73,3 +74,38 @@ def test_get_returns_nor_dict_nor_list(consensus_client: ConsensusClient):
 
     with raises:
         consensus_client._get_chain_id_with_provider(0)
+
+
+@pytest.mark.unit
+def test_get_validators_fallback_to_slot_on_state_not_found(consensus_client: ConsensusClient):
+    blockstamp = BlockStampFactory.build()
+    validator_response = [{
+        'index': '1',
+        'balance': '32000000000',
+        'status': 'active_ongoing',
+        'validator': {
+            'pubkey': '0x' + '11' * 48,
+            'withdrawal_credentials': '0x' + '22' * 32,
+            'effective_balance': '32000000000',
+            'slashed': False,
+            'activation_eligibility_epoch': '0',
+            'activation_epoch': '0',
+            'exit_epoch': '18446744073709551615',
+            'withdrawable_epoch': '18446744073709551615',
+        }
+    }]
+
+    consensus_client._get = Mock(side_effect=[  # pylint: disable=protected-access
+        NotOkResponse(
+            'State not found',
+            status=404,
+            text='{"message":"State not found","code":404}',
+        )
+    ])
+    consensus_client._get_validators_with_prysm = Mock(return_value=validator_response)  # pylint: disable=protected-access
+
+    validators = consensus_client.get_validators_no_cache(blockstamp)
+
+    assert len(validators) == 1
+    assert validators[0].validator.pubkey == validator_response[0]['validator']['pubkey']
+    consensus_client._get_validators_with_prysm.assert_called_once_with(blockstamp, None)  # pylint: disable=protected-access
