@@ -115,12 +115,13 @@ class ConsensusClient(HTTPProvider):
                 raise ValueError("Expected list response from getStateValidators")
             return data
         except NotOkResponse as error:
-            if self.PRYSM_STATE_NOT_FOUND_ERROR in error.text:
+            if self._is_state_not_found_error(error):
                 return self._get_validators_with_prysm(blockstamp, pub_keys)
 
             raise error
 
     PRYSM_STATE_NOT_FOUND_ERROR = 'State not found: state not found in the last'
+    STATE_NOT_FOUND_ERROR = 'state not found'
 
     def __raise_on_prysm_error(self, errors: list[Exception]) -> Exception | None:
         """
@@ -129,9 +130,19 @@ class ConsensusClient(HTTPProvider):
         raise error immediately if this is prysm specific exception
         """
         last_error = errors[-1]
-        if isinstance(last_error, NotOkResponse) and self.PRYSM_STATE_NOT_FOUND_ERROR in last_error.text:
+        if self._is_state_not_found_error(last_error):
             return last_error
         return None
+
+    def _is_state_not_found_error(self, error: Exception) -> bool:
+        if not isinstance(error, NotOkResponse) or error.status != HTTPStatus.NOT_FOUND:
+            return False
+
+        error_text = error.text.lower()
+        return (
+            self.PRYSM_STATE_NOT_FOUND_ERROR.lower() in error_text
+            or self.STATE_NOT_FOUND_ERROR in error_text
+        )
 
     def _get_validators_with_prysm(self, blockstamp: BlockStamp, pub_keys: Optional[str | tuple] = None) -> list[dict]:
         # Avoid Prysm issue with state root - https://github.com/prysmaticlabs/prysm/issues/12053
