@@ -20,3 +20,5 @@ coverage.xml
 .hypothesis
 tests/*
 fixtures/*
+.volumes
+.volumes/*
